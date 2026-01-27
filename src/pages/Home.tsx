@@ -3,6 +3,7 @@ import Login from "./Login";
 import "../index.css";
 import Register from "./Register";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";  // Import Link from react-router-dom
 
 export default function Home() {
   const [showLogin, setShowLogin] = useState(false);
@@ -26,8 +27,8 @@ export default function Home() {
         </div>
 
         <div>
-          <a href="#">About</a>
-          <a href="#">Courses</a>
+          <Link to="/about">About</Link>  {/* Link to About page */}
+          <Link to="/support">Support</Link>  {/* Link to Support page */}
           <a
             href="#"
             className="button"
@@ -101,9 +102,8 @@ export default function Home() {
           </div>
 
           <div className="footer-links">
-            <a href="#">About</a>
-            <a href="#">Courses</a>
-            <a href="#">Support</a>
+            <Link to="/about">About</Link>  {/* Link to About */}
+            <Link to="/support">Support</Link>  {/* Link to Support */}
           </div>
         </div>
 
