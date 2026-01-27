@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* index.css - Compact Professional Home Page */
 
 /* General reset and font */
@@ -283,3 +287,5 @@ nav .button:hover {
   font-size: 0.75rem;
   color: #777;
 }
+
+
