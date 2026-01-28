@@ -1,36 +1,39 @@
-// src/App.jsx
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ForgotPassword from './pages/ForgotPassword'; // Import your pages
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Home from './pages/Home';
-import Register from './pages/Register';
-import About from './components/About'; // Import About page
-import Support from './components/Support'; // Import Support page
-import AdminUsers from './components/AdminUsers'; // Import the AdminUsers component
+// src/App.tsx
+
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import Dashboard from "./pages/Dashboard";
+import Lesson1 from "./pages/Lesson1";
+import Lesson2 from "./pages/Lesson2";
+import Lesson3 from "./pages/Lesson3";
+import Lesson4 from "./pages/Lesson4";
+import NotFound from "./pages/NotFound"; // Optional: For 404 pages
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        {/* Add AdminUsers component on the dashboard route, or anywhere else */}
-      
-        {/* Routing for other pages */}
-        <Routes>
-          <Route path="/" element={<Home />} /> {/* Default Home Page */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/about" element={<About />} /> {/* About page route */}
-          <Route path="/support" element={<Support />} /> {/* Support page route */}
-        </Routes>
-      </div>
-    </Router>
+    <div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        
+        {/* Dashboard and its lessons */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/lesson1" element={<Lesson1 />} />
+        <Route path="/dashboard/lesson2" element={<Lesson2 />} />
+        <Route path="/dashboard/lesson3" element={<Lesson3 />} />
+        <Route path="/dashboard/lesson4" element={<Lesson4 />} />
+
+        {/* 404 or Not Found Route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
   );
 }
 
 export default App;
-
-

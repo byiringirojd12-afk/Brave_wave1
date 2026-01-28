@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // ✅ For navigation
 import AuthForm from './components/AuthForm'; // Ensure path is correct
 import ForgotPassword from './pages/ForgotPassword';
 import Login from "./pages/Login";

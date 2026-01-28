@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import "./Login.css";
 
-export default function AuthForm() {
+interface AuthFormProps {
+  onClose?: () => void;
+}
+
+export default function AuthForm({ onClose }: AuthFormProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,47 +21,70 @@ export default function AuthForm() {
 
   const navigate = useNavigate();
 
+  // Simple strong password check
+  const isStrongPassword = (pwd: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(pwd);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (mode === "register" && password !== confirmPassword) {
-      setError("Passwords do not match");
+    const storedEmail = localStorage.getItem("email");
+
+    // Prevent duplicate registration
+    if (mode === "register" && storedEmail === email) {
+      setError("This email is already registered");
       return;
     }
 
-    setIsLoading(true);
-
-    setTimeout(() => {
-      const token = Math.random().toString(36).substr(2);
-
-      if (mode === "register") {
-        localStorage.setItem("name", name);
-        localStorage.setItem("email", email);
-        localStorage.setItem("password", password);
-        localStorage.setItem("role", role);
-        localStorage.setItem("token", token);
-        alert("Account created successfully!");
-      } else {
-        const storedEmail = localStorage.getItem("email");
-        const storedPassword = localStorage.getItem("password");
-
-        if (storedEmail !== email || storedPassword !== password) {
-          setError("Invalid credentials");
-          setIsLoading(false);
-          return;
-        }
+    if (mode === "register") {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      if (!isStrongPassword(password)) {
+        setError(
+          "Password must be at least 8 characters, include uppercase, lowercase, number, and special character"
+        );
+        return;
       }
 
-      if (rememberMe) {
-        localStorage.setItem("token", token);
-      } else {
-        sessionStorage.setItem("token", token);
+      // Only allow instructor for specific email
+      if (role === "instructor" && email !== "oishteen@gmail.com") {
+        setError("Only Admin can register as instructor");
+        return;
       }
 
-      navigate("/dashboard");
-      setIsLoading(false);
-    }, 1000);
+      // Save registration
+      localStorage.setItem("name", name);
+      localStorage.setItem("email", email);
+      localStorage.setItem("password", password);
+      localStorage.setItem("role", role);
+
+      alert("Account created successfully! Please log in.");
+      setMode("login"); // Redirect to login after register
+      setName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      return;
+    }
+
+    // Login
+    const storedPassword = localStorage.getItem("password");
+
+    if (storedEmail !== email || storedPassword !== password) {
+      setError("Invalid credentials");
+      return;
+    }
+
+    // Set token
+    const token = Math.random().toString(36).substring(2);
+    if (rememberMe) localStorage.setItem("token", token);
+    else sessionStorage.setItem("token", token);
+
+    navigate("/dashboard");
+    if (onClose) onClose();
   };
 
   return (
@@ -71,7 +98,6 @@ export default function AuthForm() {
         <h2>{mode === "login" ? "Welcome Back" : "Create Your Account"}</h2>
         {error && <div className="login-error">{error}</div>}
 
-        {/* Name field only for register */}
         {mode === "register" && (
           <input
             type="text"
@@ -90,7 +116,6 @@ export default function AuthForm() {
           required
         />
 
-        {/* Password field with toggle */}
         <div className="password-wrapper">
           <input
             type={showPassword ? "text" : "password"}
@@ -99,15 +124,11 @@ export default function AuthForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <span
-            className="show-password"
-            onClick={() => setShowPassword(!showPassword)}
-          >
+          <span onClick={() => setShowPassword(!showPassword)}>
             {showPassword ? "🙈" : "👁️"}
           </span>
         </div>
 
-        {/* Confirm password for register */}
         {mode === "register" && (
           <>
             <div className="password-wrapper">
@@ -118,10 +139,7 @@ export default function AuthForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
-              <span
-                className="show-password"
-                onClick={() => setShowPassword(!showPassword)}
-              >
+              <span onClick={() => setShowPassword(!showPassword)}>
                 {showPassword ? "🙈" : "👁️"}
               </span>
             </div>
@@ -133,7 +151,6 @@ export default function AuthForm() {
           </>
         )}
 
-        {/* Login options */}
         {mode === "login" && (
           <div className="login-options">
             <label>
@@ -144,17 +161,10 @@ export default function AuthForm() {
               />
               Remember Me
             </label>
-            <span
-              className="forgotPassword"
-              onClick={() => navigate("/forgotPassword")}
-              style={{ cursor: "pointer", color: "#007bff", marginLeft: "10px" }}
-            >
-              Forgot Password?
-            </span>
           </div>
         )}
 
-        <button type="submit" disabled={isLoading}>
+        <button type="submit">
           {isLoading ? "Loading..." : mode === "login" ? "Sign In" : "Register"}
         </button>
 
