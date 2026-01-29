@@ -1,5 +1,9 @@
 // src/pages/EthicalHackerPage.js
 import React from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import "./Lesson.css"
+
 
 const SectionTitle = ({ title }) => {
   return (

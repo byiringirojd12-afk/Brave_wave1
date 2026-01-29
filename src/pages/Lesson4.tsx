@@ -1,4 +1,8 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import "./Lesson.css"
+
 const App = () => {
   return (
     <div className="internet-society-container">

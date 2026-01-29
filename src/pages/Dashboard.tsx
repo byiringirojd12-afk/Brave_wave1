@@ -1,162 +1,267 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const lessons = [
-  { id: 1, title: "Cisco Networking Academy_ Introduction to Cybersecurity" },
-  { id: 2, title: "Cisco Networking Academy_Ethical_Hacker_certificate" },
-  { id: 3, title: "Internet Society_Internet Governance" },
-  { id: 4, title: "Internet Society_What the Internet Needs to Exist" }, // fixed duplicate ID
+  { id: 1, title: "Intro to Cybersecurity" },
+  { id: 2, title: "Ethical Hacking" },
+  { id: 3, title: "Internet Governance" },
+  { id: 4, title: "How the Internet Works" },
 ];
 
 export default function Dashboard() {
-  const [role, setRole] = useState("student");
-  const [progress, setProgress] = useState<Record<number, boolean>>({});
+  const navigate = useNavigate();
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("student");
+
+  const [progress, setProgress] = useState<Record<number, boolean>>({});
+  const [timeSpent, setTimeSpent] = useState(0);
+
+  /* 🔐 SESSION GUARD + ANALYTICS LOAD */
   useEffect(() => {
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
+
+    if (!token) {
+      navigate("/", { replace: true });
+      return;
+    }
+
+    setName(localStorage.getItem("name") || "Student");
     setRole(localStorage.getItem("role") || "student");
 
-    const savedProgress: Record<number, boolean> = {};
-    lessons.forEach(lesson => {
-      savedProgress[lesson.id] = localStorage.getItem(`lesson-${lesson.id}-completed`) === "true";
+    const p: Record<number, boolean> = {};
+    let totalTime = 0;
+
+    lessons.forEach(l => {
+      p[l.id] = localStorage.getItem(`lesson-${l.id}`) === "done";
+      totalTime += Number(localStorage.getItem(`time-${l.id}`)) || 0;
     });
-    setProgress(savedProgress);
+
+    setProgress(p);
+    setTimeSpent(totalTime);
   }, []);
 
-  const completionCount = Object.values(progress).filter(Boolean).length;
-  const progressPercent = (completionCount / lessons.length) * 100;
+  const completed = Object.values(progress).filter(Boolean).length;
+  const percent = Math.round((completed / lessons.length) * 100);
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    navigate("/", { replace: true });
+  };
+
+  const saveProfile = () => {
+    localStorage.setItem("name", name);
+    setEditing(false);
+  };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Welcome, {localStorage.getItem("name") || "Student"}</h1>
-      <h2 style={styles.subtitle}>Role: {role}</h2>
+    <div style={styles.layout}>
+      {/* ☰ SIDEBAR TOGGLE */}
+      <button
+        style={styles.menuBtn}
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+      >
+        ☰
+      </button>
 
-      {role === "instructor" && (
-        <Link to="/instructor" style={styles.instructorLink}>
-          Go to Instructor Dashboard
-        </Link>
-      )}
+      {/* SIDEBAR */}
+      <aside
+        style={{
+          ...styles.sidebar,
+          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+        }}
+      >
+        <h2 style={{ marginBottom: 10 }}>Profile</h2>
 
-      <h3 style={styles.sectionTitle}>Your Lessons</h3>
-      <ul style={styles.lessonList}>
-        {lessons.map(lesson => (
-          <li key={lesson.id} style={styles.lessonItem}>
-            <Link to={`/lesson/${lesson.id}`} style={styles.lessonLink}>{lesson.title}</Link>
-            <label style={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={progress[lesson.id] || false}
-                onChange={e => {
-                  localStorage.setItem(`lesson-${lesson.id}-completed`, e.target.checked.toString());
-                  setProgress(prev => ({ ...prev, [lesson.id]: e.target.checked }));
-                }}
-              />
-              Completed
-            </label>
-          </li>
-        ))}
-      </ul>
+        {editing ? (
+          <>
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              style={styles.input}
+            />
+            <button style={styles.primaryBtn} onClick={saveProfile}>
+              Save
+            </button>
+          </>
+        ) : (
+          <>
+            <p><strong>Name:</strong> {name}</p>
+            <p><strong>Role:</strong> {role}</p>
+            <button
+              style={styles.secondaryBtn}
+              onClick={() => setEditing(true)}
+            >
+              Edit Profile
+            </button>
+          </>
+        )}
 
-      <div style={styles.progressContainer}>
-        <div style={styles.progressText}>
-          Progress: {completionCount}/{lessons.length} ({progressPercent.toFixed(0)}%)
+        <hr style={{ margin: "20px 0", opacity: 0.3 }} />
+
+        <button onClick={logout} style={styles.logout}>
+          Logout
+        </button>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main style={styles.main}>
+        <h1>Analytics Dashboard</h1>
+
+        {/* ANALYTICS CARDS */}
+        <div style={styles.cards}>
+          <Card title="Lessons Completed" value={`${completed}/${lessons.length}`} />
+          <Card title="Completion Rate" value={`${percent}%`} />
+          <Card
+            title="Time Spent"
+            value={`${Math.floor(timeSpent / 60)} min`}
+          />
         </div>
-        <div style={styles.progressBarBackground}>
-          <div style={{
-            ...styles.progressBarFill,
-            width: `${progressPercent}%`
-          }} />
+
+        {/* LESSON TRACKING */}
+        <div style={styles.panel}>
+          <h2>Learning Progress</h2>
+
+          {lessons.map(l => (
+            <div key={l.id} style={styles.lessonRow}>
+              <Link to={`/lesson/${l.id}`}>{l.title}</Link>
+              <span>
+                {progress[l.id] ? "✅ Completed" : "⏳ In progress"}
+              </span>
+            </div>
+          ))}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    maxWidth: 800,
-    margin: "40px auto",
-    padding: 24,
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    backgroundColor: "#f7f9fc",
-    borderRadius: 12,
-    boxShadow: "0 8px 20px rgba(0,0,0,0.1)"
+/* 🧩 CARD COMPONENT */
+function Card({ title, value }: any) {
+  return (
+    <div style={styles.card}>
+      <h3>{title}</h3>
+      <p style={styles.cardValue}>{value}</p>
+    </div>
+  );
+}
+
+/* 🎨 STYLES */
+const styles: any = {
+  layout: {
+    display: "flex",
+    minHeight: "100vh",
+    background: "#f4f6f9",
+    fontFamily: "Inter, Arial, sans-serif",
   },
-  title: {
-    fontSize: 32,
-    marginBottom: 4,
-    color: "#333",
-  },
-  subtitle: {
-    fontSize: 18,
-    marginBottom: 16,
-    color: "#666",
-  },
-  instructorLink: {
-    display: "inline-block",
-    marginBottom: 24,
-    textDecoration: "none",
-    backgroundColor: "#007bff",
+
+  menuBtn: {
+    position: "fixed",
+    top: 20,
+    left: 20,
+    zIndex: 1000,
+    background: "#1e293b",
     color: "#fff",
-    padding: "8px 16px",
-    borderRadius: 6,
-    transition: "background 0.3s",
+    border: "none",
+    padding: "10px 14px",
+    borderRadius: 8,
+    cursor: "pointer",
   },
-  sectionTitle: {
-    fontSize: 22,
-    marginBottom: 12,
-    color: "#444",
+
+  sidebar: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: 260,
+    height: "100%",
+    background: "#1e293b",
+    color: "#fff",
+    padding: 20,
+    transition: "transform 0.3s ease",
+    zIndex: 999,
   },
-  lessonList: {
-    listStyle: "none",
-    padding: 0,
-    marginBottom: 24,
+
+  main: {
+    flex: 1,
+    marginLeft: 0,
+    padding: "80px 40px",
   },
-  lessonItem: {
+
+  cards: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))",
+    gap: 20,
+    marginBottom: 30,
+  },
+
+  card: {
+    background: "#fff",
+    padding: 24,
+    borderRadius: 16,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+    textAlign: "center",
+  },
+
+  cardValue: {
+    fontSize: 28,
+    fontWeight: 700,
+    marginTop: 10,
+  },
+
+  panel: {
+    background: "#fff",
+    padding: 24,
+    borderRadius: 16,
+    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+  },
+
+  lessonRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: "12px 16px",
-    marginBottom: 8,
-    borderRadius: 8,
-    boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-    transition: "transform 0.2s",
+    padding: "14px 0",
+    borderBottom: "1px solid #e5e7eb",
   },
-  lessonItemHover: {
-    transform: "scale(1.02)"
+
+  input: {
+    width: "100%",
+    padding: 8,
+    borderRadius: 6,
+    border: "none",
+    marginBottom: 10,
   },
-  lessonLink: {
-    textDecoration: "none",
-    color: "#007bff",
-    fontWeight: 500,
-    flex: 1,
-    marginRight: 16,
+
+  primaryBtn: {
+    background: "#3b82f6",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: 6,
+    color: "#fff",
+    cursor: "pointer",
+    width: "100%",
   },
-  checkboxLabel: {
-    display: "flex",
-    alignItems: "center",
-    fontSize: 14,
-    color: "#555",
-    gap: 4,
+
+  secondaryBtn: {
+    background: "#64748b",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: 6,
+    color: "#fff",
+    cursor: "pointer",
+    width: "100%",
   },
-  progressContainer: {
-    marginTop: 16,
+
+  logout: {
+    background: "#ef4444",
+    border: "none",
+    padding: "10px",
+    borderRadius: 6,
+    color: "#fff",
+    cursor: "pointer",
+    width: "100%",
   },
-  progressText: {
-    marginBottom: 8,
-    fontWeight: 500,
-    color: "#333",
-  },
-  progressBarBackground: {
-    background: "#e0e0e0",
-    height: 14,
-    borderRadius: 7,
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    background: "linear-gradient(90deg, #4caf50, #81c784)",
-    height: "100%",
-    borderRadius: 7,
-    transition: "width 0.5s ease-in-out",
-  }
 };
