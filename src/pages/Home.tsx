@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Login from "./Login";
 
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false);
   const navigate = useNavigate();
 
-  /* Prevent logged-in users from staying on home */
+  /* Redirect logged-in users */
   useEffect(() => {
     const token =
       localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -18,50 +18,89 @@ export default function Home() {
   }, [navigate]);
 
   const topics = [
-    { title: "Cisco Networking Academy: Introduction to Cybersecurity" },
-    { title: "Cisco Networking Academy: Ethical Hacker Certificate" },
-    { title: "Internet Society: Internet Governance" },
-    { title: "Internet Society: What the Internet Needs to Exist" },
+    "Cisco Networking Academy: Introduction to Cybersecurity",
+    "Cisco Networking Academy: Ethical Hacker Certificate",
+    "Internet Society: Internet Governance",
+    "Internet Society: What the Internet Needs to Exist",
   ];
 
   return (
-    <div className="App">
+    <div>
       {/* NAV */}
-      <nav className="px-6 py-4 flex justify-between items-center bg-white shadow-md">
-        <h1 className="text-2xl font-bold italic">BRAVE WAVE</h1>
-        <button
-          className="px-4 py-2 bg-green-400 text-white rounded-lg"
-          onClick={() => setShowAuth(true)}
-        >
+      <nav>
+        <div className="logo">
+          <div>
+            <div></div>
+          </div>
+          <strong>BRAVE WAVE</strong>
+        </div>
+
+        <button className="button" onClick={() => setShowAuth(true)}>
           Sign In / Register
         </button>
       </nav>
 
       {/* HERO */}
-      <section className="px-6 py-16">
-        <h2 className="text-4xl font-bold mb-4">
-          Learn digital skills for the modern world
-        </h2>
-        <button
-          className="px-6 py-3 bg-green-400 text-white rounded-lg"
-          onClick={() => setShowAuth(true)}
-        >
-          Start Learning
-        </button>
+      <section className="hero">
+        <div>
+          <h2>Learn digital skills for the modern world</h2>
+          <p>
+            Structured lessons designed to help you master cybersecurity and
+            internet technologies at your own pace.
+          </p>
+          <button onClick={() => setShowAuth(true)}>
+            Start Learning
+          </button>
+        </div>
+
+        <div className="hero-illustration">
+          Learning is power
+        </div>
       </section>
 
-      {/* TOPICS */}
-      <section className="px-6 py-12">
-        {topics.map((t, i) => (
-          <div
-            key={i}
-            className="p-6 bg-white rounded-xl shadow mb-4 cursor-pointer"
-            onClick={() => setShowAuth(true)}
-          >
-            {t.title}
-          </div>
-        ))}
+      {/* SERVICES */}
+      <section className="services">
+        <div className="services-header">
+          <h3>Courses</h3>
+          <p>Industry-recognized learning paths</p>
+        </div>
+
+        <div className="services-grid">
+          {topics.map((title, i) => (
+            <div
+              key={i}
+              className="service-card"
+              onClick={() => setShowAuth(true)}
+            >
+              <h4>{title}</h4>
+              <a href="#">
+                <span>→</span> Start lesson
+              </a>
+            </div>
+          ))}
+        </div>
       </section>
+
+      {/* FOOTER */}
+      <footer className="footer">
+        <div className="footer-content">
+          <div className="footer-brand">
+            <strong>BRAVE WAVE</strong>
+            <p>
+              A modern platform for mastering cybersecurity and digital skills.
+            </p>
+          </div>
+
+          <div className="footer-links">
+            <a href="#">About</a>
+            <a href="#">Support</a>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          © {new Date().getFullYear()} Brave Wave. All rights reserved.
+        </div>
+      </footer>
 
       {/* AUTH MODAL */}
       <AnimatePresence>
