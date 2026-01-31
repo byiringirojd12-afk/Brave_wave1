@@ -1,5 +1,3 @@
-// AdminUsers.js (Admin Users Page)
-
 import React, { useState, useEffect } from "react";
 
 const AdminUsers = () => {
@@ -7,36 +5,34 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch users when the component mounts
   useEffect(() => {
-    // Get the JWT token from localStorage (assuming the user is logged in)
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
+    const role = localStorage.getItem("role");
 
     if (!token) {
-      setError("You must be logged in to view this page");
+      setError("You must be logged in");
       setLoading(false);
       return;
     }
 
-    // Fetch the list of users from the backend
+    if (role !== "instructor") {
+      setError("Access denied — Instructor only");
+      setLoading(false);
+      return;
+    }
+
     const fetchUsers = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/admin/users", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`, // Send the token to the backend for authentication
-          },
-        });
+        const response = await fetch("/api/getUsers");
 
         if (response.ok) {
           const data = await response.json();
-          setUsers(data); // Save the users data to state
+          setUsers(data);
         } else {
-          const errorData = await response.json();
-          setError(errorData.message || "Failed to fetch users");
+          setError("Failed to fetch users");
         }
       } catch (err) {
-        setError("An error occurred while fetching data");
+        setError("Error fetching data");
       } finally {
         setLoading(false);
       }
@@ -45,27 +41,27 @@ const AdminUsers = () => {
     fetchUsers();
   }, []);
 
-  // If the data is loading, display a loading message
-  if (loading) return <div>Loading...</div>;
-
-  // If there's an error, display the error message
+  if (loading) return <div>Loading users...</div>;
   if (error) return <div>{error}</div>;
 
   return (
-    <div>
-      <h1>Registered Users</h1>
+    <div style={{ padding: "40px" }}>
+      <h1>Instructor Analytics Dashboard</h1>
+
       {users.length === 0 ? (
         <p>No users found.</p>
       ) : (
-        <ul>
-          {users.map((user) => (
-            <li key={user._id}>
-              <p>{user.username}</p>
-              <p>{user.email}</p>
-              <p>Joined: {new Date(user.dateJoined).toLocaleDateString()}</p>
-            </li>
-          ))}
-        </ul>
+        users.map((user, index) => (
+          <div key={index} style={{
+            border: "1px solid #ddd",
+            padding: "15px",
+            borderRadius: "10px",
+            marginBottom: "10px"
+          }}>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Completed Lessons:</strong> {user.progress?.length || 0}</p>
+          </div>
+        ))
       )}
     </div>
   );

@@ -1,131 +1,148 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import "./Lesson.css"
+import "./Lesson.css";
 
-const App = () => {
+const SectionTitle = ({ title }: { title: string }) => {
   return (
-    <div className="internet-society-container">
-      <h1>The Internet Society: Building the Foundations of the Digital World</h1>
+    <h2 className="section-title" style={{ borderLeft: '5px solid var(--accent)', paddingLeft: '15px', color: 'var(--primary)', marginBottom: '1.5rem' }}>
+      {title}
+    </h2>
+  );
+};
 
-      <section className="intro">
-        <p>
-          The internet is an essential part of modern life. It powers communication, commerce, education, and entertainment—connecting billions of people around the globe. But how does the internet actually work, and what does it need to function smoothly and securely? Behind the scenes, a range of organizations, technologies, and infrastructure come together to make the internet possible.
-        </p>
-        <p>
-          In this section, we’ll explore The Internet Society (ISOC), an organization dedicated to the promotion and development of the internet, and discuss the key elements that make the internet exist and continue to grow.
-        </p>
-      </section>
+const InternetSocietyPage = () => {
+  const navigate = useNavigate();
 
-      <section className="definition">
-        <h2>What is The Internet Society?</h2>
-        <p>
-          <strong>Definition:</strong> The Internet Society (ISOC) is a global nonprofit organization founded in 1992 to promote the open development, evolution, and use of the internet for the benefit of all people around the world. ISOC's mission is to ensure that the internet remains a global public resource, open, accessible, and secure for all users.
-        </p>
-      </section>
+  const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6 }
+  };
 
-      <section className="goals">
-        <h2>Key Goals of the Internet Society:</h2>
-        <ul>
-          <li>Advocate for policies that support the internet as a global public resource.</li>
-          <li>Ensure the internet remains secure, resilient, and accessible.</li>
-          <li>Promote the development and implementation of internet standards.</li>
-          <li>Support the growth of the internet in underserved areas and foster global collaboration.</li>
-        </ul>
-      </section>
+  return (
+    <div className="lesson-wrapper" style={{ background: 'var(--bg)', minHeight: '100vh', paddingBottom: '50px' }}>
+      <motion.div 
+        className="lesson-card"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ maxWidth: '950px', margin: '0 auto', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
+      >
+        <header className="lesson-header" style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <div className="badge" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', padding: '6px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Infrastructure Module
+          </div>
+          <h1 style={{ fontSize: '2.8rem', fontWeight: '800', marginTop: '15px', color: '#0f172a' }}>Building the Digital Foundation</h1>
+          <p className="subtitle" style={{ color: '#64748b', fontSize: '1.1rem' }}>How the Internet Society (ISOC) protects the physical and logical web.</p>
+        </header>
 
-      <section className="core-elements">
-        <h2>The Core Elements Needed for the Internet to Exist</h2>
-        <p>
-          The internet relies on several key elements to function properly. These include the technical infrastructure, legal frameworks, social acceptance, and governance structures that ensure the internet remains an open and accessible resource for all users. Let's explore these core elements.
-        </p>
-        <ol>
-          <li>
-            <strong>Infrastructure: The Physical Backbone of the Internet</strong>
-            <p>
-              The internet depends on a complex, global network of physical infrastructure that connects millions of devices. Without this infrastructure, the internet as we know it would not exist. This includes:
-            </p>
-            <ul>
-              <li><strong>Data Centers:</strong> Massive facilities that store and manage the data that flows through the internet. They house the servers that host websites, applications, and services.</li>
-              <li><strong>Internet Exchange Points (IXPs):</strong> Locations where different internet networks connect and exchange data. These help ensure the smooth transfer of data between different service providers.</li>
-              <li><strong>Undersea Cables:</strong> High-capacity fiber-optic cables that run beneath the ocean to connect continents, facilitating global communication and data exchange.</li>
-              <li><strong>Routers and Switches:</strong> These devices direct internet traffic, ensuring that data sent from one device reaches its intended destination efficiently and securely.</li>
-            </ul>
-            <p>
-              Without this infrastructure, the digital ecosystem would be fragmented and unable to operate at scale.
-            </p>
-          </li>
-          <li>
-            <strong>Internet Protocols: The Language of the Internet</strong>
-            <p>
-              The internet works because of standardized protocols, which are sets of rules that allow devices to communicate with one another. These protocols define how data is transmitted across the internet, ensuring that it can flow seamlessly between different networks and devices. Key protocols include:
-            </p>
-            <ul>
-              <li><strong>IP (Internet Protocol):</strong> The fundamental protocol that enables devices to identify and communicate with each other over the internet. Every device connected to the internet has a unique IP address that allows it to send and receive data.</li>
-              <li><strong>TCP/IP (Transmission Control Protocol/Internet Protocol):</strong> The suite of protocols that ensure data is reliably transmitted from one device to another. TCP handles the correct sequencing of data packets, while IP directs the packets to the right location.</li>
-              <li><strong>HTTP/HTTPS (Hypertext Transfer Protocol):</strong> The protocols used for transferring web pages. HTTPS ensures secure communication between your browser and the server, protecting sensitive data like passwords and credit card information.</li>
-            </ul>
-            <p>
-              These protocols allow devices to communicate globally, making the internet a universal network.
-            </p>
-          </li>
-          <li>
-            <strong>Domain Names and IP Addressing: The Addressing System of the Internet</strong>
-            <p>
-              To access any website, you need to know its domain name (like www.example.com). But behind every domain name, there’s a corresponding IP address that identifies the physical location of the website’s server. This system is known as Domain Name System (DNS).
-            </p>
-            <p>
-              <strong>ICANN (Internet Corporation for Assigned Names and Numbers):</strong> ICANN manages domain names and IP addresses to ensure that they are globally coordinated and unique. It’s responsible for maintaining the DNS system that helps route internet traffic to the correct destinations.
-            </p>
-            <p>
-              Without DNS, it would be impossible to find websites by their human-readable names. Instead, you would need to memorize the numerical IP addresses of every website, which would make the internet far less user-friendly.
-            </p>
-          </li>
-          <li>
-            <strong>Security: Protecting the Integrity of the Internet</strong>
-            <p>
-              Security is one of the most critical aspects of maintaining the internet. The internet is a prime target for cybercriminals, who attempt to steal personal data, launch malware attacks, and compromise the integrity of services. To counteract these threats, several security mechanisms are in place:
-            </p>
-            <ul>
-              <li><strong>Encryption:</strong> The process of encoding information so that only authorized users can access it. SSL/TLS encryption ensures that data transmitted between your browser and websites is secure, especially during online transactions.</li>
-              <li><strong>Firewalls:</strong> These act as a barrier between your device and the internet, blocking harmful or unauthorized traffic.</li>
-              <li><strong>Cybersecurity Standards:</strong> Organizations like the Internet Engineering Task Force (IETF) and Internet Society (ISOC) play an important role in developing internet security standards that prevent vulnerabilities and protect users.</li>
-            </ul>
-          </li>
-        </ol>
-      </section>
+        {/* Introduction */}
+        <section className="introduction" style={{ marginBottom: '50px' }}>
+          <p style={{ fontSize: '1.15rem', lineHeight: '1.8', color: '#334155' }}>
+            The internet isn't just "the cloud." It is a massive, physical achievement of engineering. 
+            The <strong>Internet Society (ISOC)</strong>, founded in 1992, acts as the guardian of this system, 
+            ensuring it remains open, globally connected, and secure.
+          </p>
+        </section>
 
-      <section className="role">
-        <h2>The Role of The Internet Society in Supporting the Internet</h2>
-        <p>
-          The Internet Society plays a crucial role in fostering the development and maintenance of the internet through its advocacy, policy work, and support of open standards. Here are some ways ISOC contributes to the global internet ecosystem:
-        </p>
-        <ul>
-          <li><strong>Advocacy for Internet Access and Policy:</strong> ISOC advocates for universal and affordable internet access. They work with governments, industry leaders, and international organizations to shape policies that enable people around the world to connect to the internet.</li>
-          <li><strong>Promoting Internet Standards:</strong> The IETF and other organizations like W3C (World Wide Web Consortium) and IEEE develop technical standards that ensure the internet remains interoperable and efficient.</li>
-          <li><strong>Global Cooperation and Governance:</strong> ISOC is a leading voice in global internet governance, supporting the Internet Governance Forum (IGF) and promoting the multistakeholder model of internet governance.</li>
-          <li><strong>Supporting Education and Research:</strong> ISOC funds and supports research initiatives aimed at improving internet access and security through scholarships, grants, and partnerships with universities.</li>
-        </ul>
-      </section>
+        {/* 1. Infrastructure Grid */}
+        <motion.section {...fadeInUp} className="content-card">
+          <SectionTitle title="The Physical Backbone" />
+          <p style={{ marginBottom: '20px' }}>Without these four physical components, global communication would cease to exist:</p>
+          <div className="concept-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
+            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Data Centers</h4>
+              <p style={{ fontSize: '0.9rem' }}>The "brains" where your data lives. Massive server farms requiring 24/7 cooling and power.</p>
+            </div>
+            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Subsea Cables</h4>
+              <p style={{ fontSize: '0.9rem' }}>Fiber optics on the ocean floor that connect continents at the speed of light.</p>
+            </div>
+            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ color: 'var(--accent)' }}>IXPs</h4>
+              <p style={{ fontSize: '0.9rem' }}>Internet Exchange Points. The physical locations where different ISPs meet to swap traffic.</p>
+            </div>
+            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Routers/BGP</h4>
+              <p style={{ fontSize: '0.9rem' }}>The traffic controllers that decide the most efficient path for your data packets.</p>
+            </div>
+          </div>
+        </motion.section>
 
-      <section className="collaboration">
-        <h2>What the Internet Needs to Exist: A Collaborative Effort</h2>
-        <p>
-          The internet is a powerful, dynamic, and constantly evolving system that requires ongoing collaboration between many different stakeholders: governments, private companies, civil society, and technical organizations. The Internet Society helps bring these diverse groups together to ensure that the internet remains a free, open, and secure resource for everyone.
-        </p>
-        <p>
-          As we look to the future, the internet will continue to evolve with new technologies and challenges, from artificial intelligence to global cybersecurity threats. It’s up to organizations like the Internet Society, along with individuals like you, to help ensure that the internet remains a tool for good—a space where innovation, creativity, and human connection can thrive.
-        </p>
-      </section>
+        {/* 2. Research Expansion: MANRS */}
+        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
+          <SectionTitle title="Security: The MANRS Initiative" />
+          <div className="info-card" style={{ display: 'flex', gap: '20px', alignItems: 'center', background: '#eff6ff', border: '1px solid #dbeafe' }}>
+            <div style={{ fontSize: '2rem' }}>🛡️</div>
+            <div>
+              <p style={{ margin: 0 }}><strong>Research Expansion:</strong> ISOC leads the <strong>MANRS</strong> (Mutually Agreed Norms for Routing Security) project. It prevents "Route Hijacking," where malicious actors misdirect internet traffic to steal data or cause outages.</p>
+            </div>
+          </div>
+        </motion.section>
 
-      <section className="call-to-action">
-        <h2>Call to Action:</h2>
-        <p>
-          Interested in learning more about the future of the internet? Stay informed by exploring our <a href="/resources">Internet Society Resources</a> or join us in supporting open internet policies by becoming a member of the <a href="/join">Internet Society</a>.
-        </p>
-      </section>
+        {/* 3. Protocols: The Universal Language */}
+        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
+          <SectionTitle title="The Language of Connection" />
+          <p>For the internet to be universal, every device must speak the same "language."</p>
+          <ul className="step-list" style={{ listStyle: 'none', padding: 0 }}>
+            <li className="info-card" style={{ marginBottom: '10px' }}>
+              <strong>TCP/IP:</strong> The core suite. TCP ensures data arrives in order; IP ensures it finds the right house.
+            </li>
+            <li className="info-card" style={{ marginBottom: '10px' }}>
+              <strong>HTTPS:</strong> The secure version of the web. It uses <strong>TLS encryption</strong> to hide your traffic from hackers.
+            </li>
+            <li className="info-card">
+              <strong>DNS (The Web's GPS):</strong> Managed by <strong>ICANN</strong>, this turns "google.com" into a machine-readable IP address.
+            </li>
+          </ul>
+        </motion.section>
+
+        {/* 4. Advocacy & Future */}
+        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
+          <SectionTitle title="Global Digital Inclusion" />
+          <p>The Internet Society doesn't just build hardware; they build communities. Their advocacy focuses on:</p>
+          <div className="info-grid">
+            <div className="info-card" style={{ borderTop: '4px solid var(--accent)' }}>
+              <h4>Community Networks</h4>
+              <p>Helping remote villages build their own internet infrastructure using low-cost Wi-Fi and satellite.</p>
+            </div>
+            <div className="info-card" style={{ borderTop: '4px solid var(--accent)' }}>
+              <h4>Open Standards</h4>
+              <p>Ensuring that no single company (like Google or Apple) can "own" the basic protocols of the web.</p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Conclusion & Navigation */}
+        <motion.section {...fadeInUp} className="call-to-action" style={{ textAlign: 'center', marginTop: '60px', padding: '50px', background: '#1e293b', color: 'white', borderRadius: '16px' }}>
+          <h2 style={{ color: 'var(--accent)', marginBottom: '10px' }}>You've Completed the Infrastructure Module</h2>
+          <p style={{ marginBottom: '30px', opacity: 0.9 }}>The internet is a collaborative masterpiece. Now you know the physical and logical layers that keep us connected.</p>
+          
+          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+            <button 
+              className="nav-btn" 
+              style={{ background: 'var(--accent)', border: 'none', color: '#1e293b', fontWeight: '700' }}
+              onClick={() => navigate('/dashboard')}
+            >
+              Finish Lesson & Update Progress
+            </button>
+            <button 
+              className="nav-btn" 
+              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'white' }}
+              onClick={() => window.location.href='/support'}
+            >
+              Support ISOC
+            </button>
+          </div>
+        </motion.section>
+
+        <footer style={{ marginTop: '40px', textAlign: 'center', opacity: 0.4, fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+          BRAVE WAVE ACADEMY | DATA INFRASTRUCTURE RESEARCH v2.4
+        </footer>
+      </motion.div>
     </div>
   );
 };
 
-export default App;
+export default InternetSocietyPage;

@@ -1,267 +1,217 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const lessons = [
-  { id: 1, title: "Intro to Cybersecurity" },
-  { id: 2, title: "Ethical Hacking" },
-  { id: 3, title: "Internet Governance" },
-  { id: 4, title: "How the Internet Works" },
+  { id: 1, title: "Intro to Cybersecurity", category: "Basics" },
+  { id: 2, title: "Ethical Hacking", category: "Offensive" },
+  { id: 3, title: "Internet Governance", category: "Policy" },
+  { id: 4, title: "How the Internet Works", category: "Infrastructure" },
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
+  
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [editing, setEditing] = useState(false);
-
-  const [name, setName] = useState("");
+  const [name, setName] = useState("Student");
   const [role, setRole] = useState("student");
-
-  const [progress, setProgress] = useState<Record<number, boolean>>({});
+  const [progress, setProgress] = useState({});
   const [timeSpent, setTimeSpent] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  /* 🔐 SESSION GUARD + ANALYTICS LOAD */
-  useEffect(() => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
-
+  const loadStats = useCallback(async () => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
       navigate("/", { replace: true });
       return;
     }
 
-    setName(localStorage.getItem("name") || "Student");
-    setRole(localStorage.getItem("role") || "student");
+    try {
+      const res = await fetch("/api/getUserProgress", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const data = await res.json();
+        setName(data.name || "Student");
+        setRole(data.role || "student");
+        setProgress(data.progress || {}); 
+        setTimeSpent(data.timeSpent || 0);
+      }
+    } catch (err) {
+      console.error("Sync Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
 
-    const p: Record<number, boolean> = {};
-    let totalTime = 0;
+  useEffect(() => {
+    loadStats();
+    window.addEventListener("focus", loadStats);
+    return () => window.removeEventListener("focus", loadStats);
+  }, [loadStats]);
 
-    lessons.forEach(l => {
-      p[l.id] = localStorage.getItem(`lesson-${l.id}`) === "done";
-      totalTime += Number(localStorage.getItem(`time-${l.id}`)) || 0;
-    });
-
-    setProgress(p);
-    setTimeSpent(totalTime);
-  }, []);
-
-  const completed = Object.values(progress).filter(Boolean).length;
-  const percent = Math.round((completed / lessons.length) * 100);
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
     navigate("/", { replace: true });
   };
 
-  const saveProfile = () => {
-    localStorage.setItem("name", name);
-    setEditing(false);
+  const completedCount = Object.keys(progress).filter(key => progress[key] === true).length;
+  const percent = Math.round((completedCount / lessons.length) * 100);
+  
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
+
+  if (loading) return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', color: '#64748b' }}>Establishing Secure Connection...</div>;
 
   return (
     <div style={styles.layout}>
-      {/* ☰ SIDEBAR TOGGLE */}
-      <button
-        style={styles.menuBtn}
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        ☰
+      <button style={styles.menuBtn} onClick={() => setSidebarOpen(!sidebarOpen)}>
+        {sidebarOpen ? "✕" : "☰"}
       </button>
 
-      {/* SIDEBAR */}
-      <aside
-        style={{
-          ...styles.sidebar,
-          transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-        }}
-      >
-        <h2 style={{ marginBottom: 10 }}>Profile</h2>
+      <AnimatePresence>
+        {sidebarOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)} style={styles.backdrop} />
+            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: "spring", damping: 25 }} style={styles.sidebar}>
+              <div style={{ padding: '25px' }}>
+                <div style={styles.logoRow}>
+                  <div style={styles.logoBox}><div style={styles.logoDiamond} /></div>
+                  <h2 style={styles.logoText}>BRAVE WAVE</h2>
+                </div>
 
-        {editing ? (
-          <>
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              style={styles.input}
-            />
-            <button style={styles.primaryBtn} onClick={saveProfile}>
-              Save
-            </button>
-          </>
-        ) : (
-          <>
-            <p><strong>Name:</strong> {name}</p>
-            <p><strong>Role:</strong> {role}</p>
-            <button
-              style={styles.secondaryBtn}
-              onClick={() => setEditing(true)}
-            >
-              Edit Profile
-            </button>
+                <div style={styles.profileSection}>
+                  <div style={styles.avatar}>{name.charAt(0).toUpperCase()}</div>
+                  <h3 style={styles.profileName}>{name}</h3>
+                  <p style={styles.profileRole}>{role.toUpperCase()}</p>
+                </div>
+
+                <nav style={styles.sideNav}>
+                  <button style={styles.sideLinkActive} onClick={() => setSidebarOpen(false)}>📚 My Courses</button>
+                  <button style={styles.sideLink} onClick={() => navigate("/analytics")}>📈 Analytics</button>
+                </nav>
+
+                <button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
+              </div>
+            </motion.aside>
           </>
         )}
+      </AnimatePresence>
 
-        <hr style={{ margin: "20px 0", opacity: 0.3 }} />
+      <main style={{ ...styles.main, marginLeft: sidebarOpen ? 280 : 0 }}>
+        <header style={{ marginBottom: 40 }}>
+          <h1 style={styles.h1}>Learning Velocity</h1>
+          <p style={styles.subtitle}>Verified curriculum progress for {name}.</p>
+        </header>
 
-        <button onClick={logout} style={styles.logout}>
-          Logout
-        </button>
-      </aside>
-
-      {/* MAIN CONTENT */}
-      <main style={styles.main}>
-        <h1>Analytics Dashboard</h1>
-
-        {/* ANALYTICS CARDS */}
-        <div style={styles.cards}>
-          <Card title="Lessons Completed" value={`${completed}/${lessons.length}`} />
-          <Card title="Completion Rate" value={`${percent}%`} />
-          <Card
-            title="Time Spent"
-            value={`${Math.floor(timeSpent / 60)} min`}
-          />
+        <div style={styles.cardsGrid}>
+          <AnalyticsCard title="Completion" value={`${percent}%`} sub="Total syllabus" color="#22c55e" />
+          <AnalyticsCard title="Active Time" value={formatTime(timeSpent)} sub="Learning effort" color="#8b5cf6" />
+          <AnalyticsCard title="Status" value={percent === 100 ? "Elite" : "Active"} sub="Current Rank" color="#f59e0b" />
         </div>
 
-        {/* LESSON TRACKING */}
-        <div style={styles.panel}>
-          <h2>Learning Progress</h2>
+        <section style={styles.panel}>
+          <div style={styles.panelHeader}>
+            <h2 style={styles.panelTitle}>Course Modules</h2>
+            <span style={styles.panelCounter}>{completedCount} of {lessons.length} finished</span>
+          </div>
 
-          {lessons.map(l => (
-            <div key={l.id} style={styles.lessonRow}>
-              <Link to={`/lesson/${l.id}`}>{l.title}</Link>
-              <span>
-                {progress[l.id] ? "✅ Completed" : "⏳ In progress"}
-              </span>
+          <div style={styles.progressBarBg}>
+            <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 1 }} style={styles.progressFill} />
+          </div>
+
+          <div style={styles.lessonList}>
+            {lessons.map(l => {
+              // FIX: Convert to string to match database key
+              const isDone = progress[String(l.id)] === true;
+
+              return (
+                <div key={l.id} style={styles.lessonRow}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                    <div style={{ 
+                      width: 12, height: 12, borderRadius: '50%', 
+                      background: isDone ? '#22c55e' : '#e2e8f0',
+                      boxShadow: isDone ? '0 0 12px rgba(34, 197, 94, 0.4)' : 'none'
+                    }} />
+                    <div>
+                      <Link to={`/dashboard/lesson${l.id}`} style={styles.lessonLink}>{l.title}</Link>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{l.category}</div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isDone ? '#22c55e' : '#94a3b8' }}>
+                    {isDone ? "DONE" : "LOCKED"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {percent === 100 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={styles.certCard}>
+            <div style={{ fontSize: '2rem' }}>🎓</div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Credential Unlocked</h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>Professional Cybersecurity Foundations</p>
             </div>
-          ))}
-        </div>
+            <button onClick={() => navigate("/download-certificate")} style={styles.downloadBtn}>Download PNG</button>
+          </motion.div>
+        )}
       </main>
     </div>
   );
 }
 
-/* 🧩 CARD COMPONENT */
-function Card({ title, value }: any) {
+function AnalyticsCard({ title, value, sub, color }) {
   return (
-    <div style={styles.card}>
-      <h3>{title}</h3>
-      <p style={styles.cardValue}>{value}</p>
+    <div style={{ ...styles.card, borderTop: `4px solid ${color}` }}>
+      <h3 style={styles.cardTitle}>{title}</h3>
+      <div style={styles.cardValue}>{value}</div>
+      <div style={styles.cardSub}>{sub}</div>
     </div>
   );
 }
 
-/* 🎨 STYLES */
-const styles: any = {
-  layout: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#f4f6f9",
-    fontFamily: "Inter, Arial, sans-serif",
-  },
-
-  menuBtn: {
-    position: "fixed",
-    top: 20,
-    left: 20,
-    zIndex: 1000,
-    background: "#1e293b",
-    color: "#fff",
-    border: "none",
-    padding: "10px 14px",
-    borderRadius: 8,
-    cursor: "pointer",
-  },
-
-  sidebar: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    width: 260,
-    height: "100%",
-    background: "#1e293b",
-    color: "#fff",
-    padding: 20,
-    transition: "transform 0.3s ease",
-    zIndex: 999,
-  },
-
-  main: {
-    flex: 1,
-    marginLeft: 0,
-    padding: "80px 40px",
-  },
-
-  cards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))",
-    gap: 20,
-    marginBottom: 30,
-  },
-
-  card: {
-    background: "#fff",
-    padding: 24,
-    borderRadius: 16,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-    textAlign: "center",
-  },
-
-  cardValue: {
-    fontSize: 28,
-    fontWeight: 700,
-    marginTop: 10,
-  },
-
-  panel: {
-    background: "#fff",
-    padding: 24,
-    borderRadius: 16,
-    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-  },
-
-  lessonRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "14px 0",
-    borderBottom: "1px solid #e5e7eb",
-  },
-
-  input: {
-    width: "100%",
-    padding: 8,
-    borderRadius: 6,
-    border: "none",
-    marginBottom: 10,
-  },
-
-  primaryBtn: {
-    background: "#3b82f6",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: 6,
-    color: "#fff",
-    cursor: "pointer",
-    width: "100%",
-  },
-
-  secondaryBtn: {
-    background: "#64748b",
-    border: "none",
-    padding: "8px 12px",
-    borderRadius: 6,
-    color: "#fff",
-    cursor: "pointer",
-    width: "100%",
-  },
-
-  logout: {
-    background: "#ef4444",
-    border: "none",
-    padding: "10px",
-    borderRadius: 6,
-    color: "#fff",
-    cursor: "pointer",
-    width: "100%",
-  },
+const styles = {
+  layout: { display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, sans-serif' },
+  backdrop: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 80 },
+  menuBtn: { position: 'fixed', top: 25, left: 25, zIndex: 100, background: '#0f172a', color: 'white', border: 'none', borderRadius: '50%', width: 45, height: 45, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', fontSize: '1.2rem' },
+  sidebar: { position: 'fixed', width: 280, height: '100%', background: '#0f172a', color: 'white', zIndex: 90, boxShadow: '10px 0 40px rgba(0,0,0,0.15)' },
+  logoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 },
+  logoBox: { width: 32, height: 32, background: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', borderRadius: 6 },
+  logoDiamond: { width: 14, height: 14, background: '#22c55e', transform: 'rotate(45deg)' },
+  logoText: { fontSize: '1.2rem', fontWeight: 900, letterSpacing: '1px', margin: 0 },
+  profileSection: { textAlign: 'center', marginBottom: 40, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 30 },
+  avatar: { width: 64, height: 64, background: '#3b82f6', borderRadius: '50%', margin: '0 auto 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 800, color: 'white' },
+  profileName: { fontSize: '1.1rem', fontWeight: 700, margin: '0 0 5px 0', color: 'white' },
+  profileRole: { fontSize: '0.75rem', opacity: 0.5, fontWeight: 600, letterSpacing: '1px' },
+  sideNav: { display: 'flex', flexDirection: 'column', gap: 8 },
+  sideLink: { background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', textAlign: 'left', padding: '12px 15px', borderRadius: 10, cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500 },
+  sideLinkActive: { background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', textAlign: 'left', padding: '12px 15px', borderRadius: 10, cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600 },
+  logoutBtn: { width: '80%', margin: '50px auto 0', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid #ef4444', padding: '12px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, display: 'block' },
+  main: { flex: 1, padding: '100px 50px', transition: 'margin 0.35s ease' },
+  h1: { fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', marginBottom: 10 },
+  subtitle: { color: '#64748b', fontSize: '1.1rem' },
+  cardsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 25, marginBottom: 50 },
+  card: { background: 'white', padding: 25, borderRadius: 20, boxShadow: '0 10px 25px rgba(0,0,0,0.03)' },
+  cardTitle: { fontSize: '0.8rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, marginBottom: 10 },
+  cardValue: { fontSize: '2.2rem', fontWeight: 900, color: '#0f172a' },
+  cardSub: { fontSize: '0.85rem', color: '#64748b' },
+  panel: { background: 'white', padding: 35, borderRadius: 24, boxShadow: '0 20px 50px rgba(0,0,0,0.04)' },
+  panelHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
+  panelTitle: { fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: 0 },
+  panelCounter: { fontSize: '0.9rem', color: '#64748b' },
+  progressBarBg: { height: 10, background: '#f1f5f9', borderRadius: 20, marginBottom: 35, overflow: 'hidden' },
+  progressFill: { height: '100%', background: 'linear-gradient(90deg, #3b82f6, #22c55e)' },
+  lessonList: { display: 'flex', flexDirection: 'column' },
+  lessonRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 0', borderBottom: '1px solid #f1f5f9' },
+  lessonLink: { textDecoration: 'none', color: '#0f172a', fontWeight: 700 },
+  certCard: { marginTop: 40, background: '#0f172a', color: 'white', padding: '25px 30px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 25 },
+  downloadBtn: { marginLeft: 'auto', background: '#22c55e', border: 'none', padding: '12px 20px', borderRadius: 10, color: '#0f172a', fontWeight: 800, cursor: 'pointer' }
 };

@@ -1,127 +1,148 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import "./Lesson.css"
-const App = () => {
+import "./Lesson.css";
+
+const SectionTitle = ({ title }: { title: string }) => {
   return (
-    <div className="internet-governance-container">
-      <h1>What is Internet Governance? Understanding the Rules that Shape the Digital World</h1>
+    <h2 className="section-title" style={{ borderLeft: '5px solid var(--accent)', paddingLeft: '15px', color: 'var(--primary)', marginBottom: '1.5rem' }}>
+      {title}
+    </h2>
+  );
+};
 
-      <section className="intro">
-        <p>
-          The internet has become a crucial part of daily life—connecting billions of people and enabling businesses, governments, and individuals to interact globally. However, with such vast reach comes the need for governance: rules, policies, and frameworks that ensure the internet remains a safe, secure, and inclusive space for all users.
-        </p>
-        <p>
-          In this section, we’ll explore internet governance, why it’s important, and who controls and shapes the future of the internet.
-        </p>
-      </section>
+const InternetGovernancePage = () => {
+  const navigate = useNavigate();
 
-      <section className="definition">
-        <h2>What is Internet Governance?</h2>
-        <p>
-          <strong>Definition:</strong> Internet Governance refers to the development and application of shared principles, norms, rules, and decision-making procedures that guide the use of the internet. It involves a broad range of stakeholders, including governments, international organizations, private companies, civil society groups, and individual users.
-        </p>
-        <p>
-          Internet governance is essentially about balancing the needs of different groups to ensure that the internet remains open, secure, accessible, and beneficial to everyone.
-        </p>
-      </section>
+  // Animation variants for a "sliding up" effect as user scrolls
+  const fadeInUp = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6 }
+  };
 
-      <section className="principles">
-        <h2>Key Principles of Internet Governance</h2>
-        <p>While there are many different aspects to internet governance, several core principles shape its framework:</p>
-        <ul>
-          <li><strong>Openness</strong>: The internet is designed to be open, enabling the free flow of information and communication across borders. Policies and frameworks should foster openness, ensuring that content is accessible and that internet users can communicate without undue restrictions.</li>
-          <li><strong>Accessibility</strong>: Internet governance should ensure that access to the internet is available to all individuals, regardless of location, socio-economic status, or abilities. This includes efforts to bridge the digital divide, which is especially critical in underserved or rural areas.</li>
-          <li><strong>Security and Privacy</strong>: Ensuring the security of online transactions, communications, and data storage is essential. Internet governance must include robust mechanisms to protect privacy, safeguard against cybercrime, and prevent data breaches.</li>
-          <li><strong>Accountability</strong>: Accountability refers to holding stakeholders (governments, companies, and organizations) responsible for their actions and policies concerning the internet. Effective internet governance requires transparency, monitoring, and legal enforcement of standards.</li>
-          <li><strong>Multistakeholder Participation</strong>: A key feature of internet governance is the multistakeholder approach, which means that decision-making processes should involve a wide range of stakeholders, including governments, private sector companies, civil society, and technical communities.</li>
-        </ul>
-      </section>
+  return (
+    <div className="lesson-wrapper" style={{ background: 'var(--bg)', minHeight: '100vh', paddingBottom: '50px' }}>
+      <motion.div 
+        className="lesson-card"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        style={{ maxWidth: '900px', margin: '0 auto', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
+      >
+        <header className="lesson-header">
+          <div className="badge" style={{ background: 'var(--primary)', color: 'var(--accent)', padding: '5px 12px', borderRadius: '20px', fontSize: '0.8rem', display: 'inline-block', marginBottom: '15px', fontWeight: 'bold' }}>
+            Policy & Ethics Module
+          </div>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1a1a1a' }}>Internet Governance</h1>
+          <p className="subtitle" style={{ fontSize: '1.2rem', color: '#64748b' }}>Understanding the invisible rules that shape our global digital society.</p>
+        </header>
 
-      <section className="stakeholders">
-        <h2>Who Governs the Internet?</h2>
-        <p>Unlike traditional forms of governance, which may be concentrated in one or more central authorities, internet governance is highly decentralized and involves multiple actors at various levels. Here are the key stakeholders in internet governance:</p>
-        <ul>
-          <li><strong>Governments</strong>: Governments play an essential role in setting policies that affect their citizens' access to and use of the internet. They enforce national laws related to cybersecurity, privacy, content regulation, intellectual property, and more. However, governments are often limited by international agreements and the need to cooperate with other countries to ensure the free flow of information across borders.</li>
-          <ul>
-            <li><strong>Key Organizations:</strong></li>
-            <li><strong>United Nations (UN)</strong>: Provides forums for global cooperation and helps in the development of international legal frameworks.</li>
-            <li><strong>Internet Governance Forum (IGF)</strong>: Facilitated by the UN, the IGF brings together governments, the private sector, civil society, and technical experts to discuss internet-related issues.</li>
+        <section className="introduction" style={{ margin: '30px 0' }}>
+          <p style={{ fontSize: '1.1rem', lineHeight: '1.8' }}>
+            The internet has no single king. Instead, it relies on a complex web of <strong>governance</strong>—rules, policies, and frameworks that ensure it remains a safe, inclusive, and interoperable space for billions of users.
+          </p>
+        </section>
+
+        {/* 1. What is Internet Governance? */}
+        <motion.section {...fadeInUp} className="content-card" style={{ marginBottom: '40px' }}>
+          <SectionTitle title="What is Internet Governance?" />
+          <div className="info-card" style={{ background: '#f8fafc', padding: '25px', borderRadius: '12px', borderLeft: '4px solid var(--accent)' }}>
+            <p><strong>Official Definition:</strong> The development and application of shared principles, norms, and decision-making procedures that guide the use of the internet.</p>
+          </div>
+          <p style={{ marginTop: '15px' }}>It is the ultimate balancing act between <strong>Governments</strong>, <strong>Private Companies</strong>, and <strong>Civil Society</strong>.</p>
+        </motion.section>
+
+        {/* 2. Key Pillars Grid */}
+        <motion.section {...fadeInUp} className="content-card">
+          <SectionTitle title="The 5 Pillars of Digital Order" />
+          <div className="concept-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            <div className="concept-box" style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Openness</h4>
+              <p>Ensuring the free flow of information without borders or "walled gardens."</p>
+            </div>
+            <div className="concept-box" style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Accessibility</h4>
+              <p>Bridging the <strong>Digital Divide</strong> so rural and underserved areas can participate.</p>
+            </div>
+            <div className="concept-box" style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Privacy</h4>
+              <p>Enforcing laws like <strong>GDPR</strong> to protect users from mass surveillance.</p>
+            </div>
+            <div className="concept-box" style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+              <h4 style={{ color: 'var(--accent)' }}>Multistakeholderism</h4>
+              <p>The idea that no single group should control the web.</p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 3. Who Governs the Web? Expansion */}
+        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
+          <SectionTitle title="The Global Power Map" />
+          <p>The internet functions through a "bottom-up" technical approach rather than top-down laws.</p>
+          
+          <div className="info-grid" style={{ marginTop: '20px' }}>
+            <div className="info-card">
+              <h4 style={{ fontWeight: 'bold' }}>ICANN</h4>
+              <p>The "Phonebook" of the web. They manage Domain Names (DNS) and IP addresses.</p>
+            </div>
+            <div className="info-card">
+              <h4 style={{ fontWeight: 'bold' }}>IETF & W3C</h4>
+              <p>The engineers who build the protocols (HTTP, HTML, IPv6) that allow us to browse.</p>
+            </div>
+            <div className="info-card">
+              <h4 style={{ fontWeight: 'bold' }}>The UN (IGF)</h4>
+              <p>A global forum where world leaders discuss cybersecurity and digital rights.</p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 4. Research Expansion: Challenges & Splinternet */}
+        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
+          <SectionTitle title="Critical Challenges: The 'Splinternet'" />
+          <p>Research suggests we are moving toward <strong>Cyber Sovereignty</strong>, where different countries create their own versions of the internet.</p>
+          
+          <ul className="step-list" style={{ listStyle: 'none', padding: 0 }}>
+            <li className="info-card" style={{ marginBottom: '15px' }}>
+              <strong>🚩 Fragmentation:</strong> When national firewalls block global services, breaking the "one internet" dream.
+            </li>
+            <li className="info-card" style={{ marginBottom: '15px' }}>
+              <strong>🚩 AI Ethics:</strong> How do we govern algorithms that can influence elections or spread misinformation?
+            </li>
+            <li className="info-card" style={{ marginBottom: '15px' }}>
+              <strong>🚩 Net Neutrality:</strong> The ongoing battle to ensure ISPs don't speed up or slow down content based on payment.
+            </li>
           </ul>
+        </motion.section>
 
-          <li><strong>Private Sector</strong>: Private companies, especially those that provide the infrastructure (such as ISPs) and platforms (social media, e-commerce, etc.), play a significant role in internet governance. They often create terms of service, data usage policies, and implement technical standards that shape how users access and interact with the internet.</li>
-          <ul>
-            <li><strong>Key Companies:</strong></li>
-            <li><strong>ICANN (Internet Corporation for Assigned Names and Numbers)</strong>: Manages the domain name system (DNS) and coordinates global IP addressing systems.</li>
-            <li><strong>IETF (Internet Engineering Task Force)</strong>: Develops technical standards for the internet, ensuring interoperability and addressing emerging issues like IPv6 adoption.</li>
-          </ul>
+        {/* 5. Conclusion & CTA */}
+        <motion.section {...fadeInUp} className="call-to-action" style={{ textAlign: 'center', marginTop: '60px', padding: '40px', background: 'var(--primary)', color: 'white', borderRadius: '16px' }}>
+          <h2 style={{ color: 'var(--accent)', marginBottom: '15px' }}>The Future is in Your Hands</h2>
+          <p style={{ marginBottom: '30px' }}>Internet governance isn't just for politicians. As a digital citizen, your privacy and rights depend on these policies.</p>
+          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+            <button 
+                className="nav-btn" 
+                style={{ background: 'var(--accent)', color: 'var(--primary)', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                onClick={() => navigate('/dashboard')}
+            >
+                Complete Module
+            </button>
+            <button 
+                className="nav-btn" 
+                style={{ background: 'transparent', color: 'white', border: '1px solid white', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                onClick={() => window.location.href='/courses'}
+            >
+                View More Policy Courses
+            </button>
+          </div>
+        </motion.section>
 
-          <li><strong>Civil Society</strong>: Civil society groups represent the interests of individual users, non-governmental organizations (NGOs), and the general public. They advocate for digital rights, including freedom of expression, privacy, and access to information. Their role is essential in ensuring that internet policies reflect human rights concerns and are not overly restrictive.</li>
-          <ul>
-            <li><strong>Examples of Civil Society Contributions:</strong></li>
-            <li><strong>Electronic Frontier Foundation (EFF)</strong>: Advocates for privacy, free expression, and digital rights.</li>
-            <li><strong>Access Now</strong>: Focuses on protecting digital rights, including privacy and access to information in the global south.</li>
-          </ul>
-
-          <li><strong>Technical Community</strong>: The technical community consists of engineers, developers, and researchers who maintain the internet’s infrastructure and contribute to the development of standards and protocols. Their work is fundamental to ensuring that the internet continues to function smoothly and securely.</li>
-          <ul>
-            <li><strong>Key Organizations:</strong></li>
-            <li><strong>W3C (World Wide Web Consortium)</strong>: Develops standards to ensure the web remains accessible, interoperable, and functional across all devices.</li>
-            <li><strong>IEEE (Institute of Electrical and Electronics Engineers)</strong>: Plays a key role in establishing technical standards for communication technologies.</li>
-          </ul>
-        </ul>
-      </section>
-
-      <section className="key-areas">
-        <h2>Key Areas of Internet Governance</h2>
-        <p>Here are some critical areas of focus within internet governance:</p>
-        <ul>
-          <li><strong>Domain Names and IP Addressing</strong>: The management of domain names and IP addresses is one of the most fundamental aspects of internet governance. The ICANN organization coordinates the assignment of domain names and IP addresses to ensure that all devices and websites can communicate with each other.</li>
-          <li><strong>Cybersecurity</strong>: As cyber threats grow in scale and sophistication, cybersecurity governance is more important than ever. Governments and private entities need to collaborate to develop strategies for defending the internet against attacks such as data breaches, DDoS attacks, and ransomware.</li>
-          <li><strong>Net Neutrality</strong>: Net neutrality is the principle that internet service providers (ISPs) should treat all data on the internet equally, without discriminating or charging differently by user, content, website, or platform. Some countries have passed laws to ensure net neutrality, while others have seen debates over whether to allow ISPs to prioritize certain services.</li>
-          <li><strong>Privacy and Data Protection</strong>: As data breaches and surveillance issues have grown, internet governance has increasingly focused on protecting personal information. Laws like the General Data Protection Regulation (GDPR) in the EU aim to safeguard users’ privacy by giving them more control over their data.</li>
-          <li><strong>Content Regulation and Censorship</strong>: Governments and organizations around the world often disagree on how to regulate content on the internet, from misinformation and hate speech to the privacy of individuals. Balancing free speech with protection from harmful content is a complex issue that requires international cooperation.</li>
-          <li><strong>Digital Inclusion</strong>: Digital inclusion is about ensuring that all people, no matter where they live or their economic background, have access to the internet. This is particularly critical in less developed regions where the digital divide can exacerbate inequality.</li>
-        </ul>
-      </section>
-
-      <section className="challenges">
-        <h2>Challenges in Internet Governance</h2>
-        <ul>
-          <li><strong>The Digital Divide</strong>: Not everyone has equal access to the internet, especially in developing regions. This gap leads to inequality in education, economic opportunities, and political participation.</li>
-          <li><strong>Sovereignty vs. Global Coordination</strong>: Some governments assert the right to control internet content within their borders, which can conflict with international efforts to create a unified global framework for the internet. Balancing national sovereignty with global cooperation is a key challenge.</li>
-          <li><strong>Privacy and Surveillance</strong>: While privacy protection is a core principle of internet governance, surveillance by governments and private entities is a growing concern. Striking the right balance between security and privacy is a critical issue.</li>
-          <li><strong>Cybersecurity Threats</strong>: As cyber threats continue to grow, there is an increasing need for cooperation among international organizations, governments, and the private sector to defend against attacks that could disrupt global networks and infrastructure.</li>
-        </ul>
-      </section>
-
-      <section className="future">
-        <h2>The Future of Internet Governance</h2>
-        <p>
-          The future of internet governance will depend on the ability of stakeholders to address emerging challenges, adapt to technological advances, and ensure that the internet remains an open, secure, and accessible platform for all.
-        </p>
-        <ul>
-          <li><strong>Artificial Intelligence (AI)</strong>: As AI systems become more integrated into the internet, new governance frameworks will be needed to address issues such as bias, transparency, and accountability.</li>
-          <li><strong>Blockchain</strong>: Decentralized technologies like blockchain could influence the governance of the internet, especially in areas like privacy, finance, and identity management.</li>
-          <li><strong>Global Cooperation</strong>: With the increasing importance of the internet in global trade, politics, and society, international cooperation will be essential to maintaining stability and security.</li>
-        </ul>
-      </section>
-
-      <section className="conclusion">
-        <h2>Conclusion</h2>
-        <p>
-          Internet governance is a vital and evolving field that impacts everyone who uses the internet. By ensuring the digital world remains secure, open, and accessible, internet governance helps protect users’ rights, promotes innovation, and fosters trust in digital technologies.
-        </p>
-      </section>
-
-      <section className="call-to-action">
-        <h2>Call to Action:</h2>
-        <p>
-          Interested in learning more about how the internet is governed? Explore our <a href="/resources">Internet Governance Resources</a> or dive deeper into specific areas of digital policy and cybersecurity in our <a href="/courses">course offerings</a>!
-        </p>
-      </section>
+        <footer style={{ marginTop: '40px', textAlign: 'center', opacity: 0.5, fontSize: '0.8rem' }}>
+          BRAVE WAVE © {new Date().getFullYear()} | Internet Society & Policy Research
+        </footer>
+      </motion.div>
     </div>
   );
 };
 
-export default App;
+export default InternetGovernancePage;
