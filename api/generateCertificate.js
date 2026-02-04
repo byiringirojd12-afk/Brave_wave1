@@ -1,4 +1,4 @@
-import { connectToDB } from "./_db";
+import { connectToDB } from "./_db.js";
 import { createCanvas, loadImage } from "canvas";
 import crypto from "crypto";
 import QRCode from "qrcode";

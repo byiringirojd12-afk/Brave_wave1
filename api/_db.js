@@ -1,30 +1,33 @@
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
 const uri = process.env.MONGO_URI;
-const options = {};
+
+if (!uri) throw new Error("❌ MONGO_URI missing in .env.local");
 
 let client;
 let clientPromise;
 
-if (!process.env.MONGO_URI) {
-  throw new Error("Please add your Mongo URI to .env.local");
-}
-
 if (process.env.NODE_ENV === "development") {
-  // In development, use a global variable so the connection isn't reset during HMR.
   if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
+    client = new MongoClient(uri);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production, it's best to not use a global variable.
-  client = new MongoClient(uri, options);
+  client = new MongoClient(uri);
   clientPromise = client.connect();
 }
 
 export async function connectToDB() {
-  const conn = await clientPromise;
-  // Use the database name from your URI or specify it here
-  return conn.db("learning_platform"); 
+  try {
+    const conn = await clientPromise;
+    return conn.db("brave-wave1");
+  } catch (err) {
+    console.error("❌ DATABASE CONNECTION ERROR:", err.message);
+    throw new Error("Database connection failed");
+  }
 }

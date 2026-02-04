@@ -11,14 +11,17 @@ const lessons = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  
+
+  // State
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState("Student");
   const [role, setRole] = useState("student");
   const [progress, setProgress] = useState({});
   const [timeSpent, setTimeSpent] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Fetch Dashboard data
   const loadStats = useCallback(async () => {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     if (!token) {
@@ -28,23 +31,48 @@ export default function Dashboard() {
 
     try {
       const res = await fetch("/api/getUserProgress", {
-        headers: { Authorization: `Bearer ${token}` }
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
-      
-      const contentType = res.headers.get("content-type");
-      if (res.ok && contentType && contentType.includes("application/json")) {
-        const data = await res.json();
-        setName(data.name || "Student");
-        setRole(data.role || "student");
-        setProgress(data.progress || {}); 
-        setTimeSpent(data.timeSpent || 0);
-      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch");
+
+      setName(data.name || "Student");
+      setRole(data.role || "student");
+      setProgress(data.progress || {});
+      setTimeSpent(data.timeSpent || 0);
     } catch (err) {
-      console.error("Sync Error:", err);
+      console.error("Dashboard Sync Error:", err);
     } finally {
       setLoading(false);
     }
   }, [navigate]);
+
+  // Update name
+  const updateName = async (newName: string) => {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!newName.trim() || !token) return;
+
+    setName(newName); // Optimistic UI
+
+    try {
+      const res = await fetch("/api/getUserProgress", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ updateProfile: true, name: newName }),
+      });
+      if (!res.ok) throw new Error("Failed to update name");
+    } catch (err) {
+      console.error("Failed to save name:", err);
+    }
+  };
 
   useEffect(() => {
     loadStats();
@@ -52,22 +80,29 @@ export default function Dashboard() {
     return () => window.removeEventListener("focus", loadStats);
   }, [loadStats]);
 
+  // Logout
   const handleLogout = () => {
     localStorage.clear();
     sessionStorage.clear();
     navigate("/", { replace: true });
   };
 
-  const completedCount = Object.keys(progress).filter(key => progress[key] === true).length;
+  // Stats
+  const completedCount = Object.keys(progress).filter(k => progress[k]).length;
   const percent = Math.round((completedCount / lessons.length) * 100);
-  
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
-  if (loading) return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', color: '#64748b' }}>Establishing Secure Connection...</div>;
+  if (loading) return (
+    <div style={styles.loadingScreen}>
+      <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+        Establishing Secure Connection...
+      </motion.div>
+    </div>
+  );
 
   return (
     <div style={styles.layout}>
@@ -78,9 +113,21 @@ export default function Dashboard() {
       <AnimatePresence>
         {sidebarOpen && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)} style={styles.backdrop} />
-            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: "spring", damping: 25 }} style={styles.sidebar}>
-              <div style={{ padding: '25px' }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSidebarOpen(false)}
+              style={styles.backdrop}
+            />
+            <motion.aside
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ type: "spring", damping: 25 }}
+              style={styles.sidebar}
+            >
+              <div style={{ padding: "25px" }}>
                 <div style={styles.logoRow}>
                   <div style={styles.logoBox}><div style={styles.logoDiamond} /></div>
                   <h2 style={styles.logoText}>BRAVE WAVE</h2>
@@ -88,7 +135,22 @@ export default function Dashboard() {
 
                 <div style={styles.profileSection}>
                   <div style={styles.avatar}>{name.charAt(0).toUpperCase()}</div>
-                  <h3 style={styles.profileName}>{name}</h3>
+
+                  {editing ? (
+                    <input
+                      autoFocus
+                      style={styles.nameInput}
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      onBlur={() => { setEditing(false); updateName(name); }}
+                      onKeyDown={e => { if (e.key === "Enter") { setEditing(false); updateName(name); } }}
+                    />
+                  ) : (
+                    <h3 style={styles.profileName} onClick={() => setEditing(true)}>
+                      {name} <span style={{ fontSize: "0.8rem", opacity: 0.4 }}>✎</span>
+                    </h3>
+                  )}
+
                   <p style={styles.profileRole}>{role.toUpperCase()}</p>
                 </div>
 
@@ -107,7 +169,7 @@ export default function Dashboard() {
       <main style={{ ...styles.main, marginLeft: sidebarOpen ? 280 : 0 }}>
         <header style={{ marginBottom: 40 }}>
           <h1 style={styles.h1}>Learning Velocity</h1>
-          <p style={styles.subtitle}>Verified curriculum progress for {name}.</p>
+          <p style={styles.subtitle}>Verified curriculum progress for <strong>{name}</strong>.</p>
         </header>
 
         <div style={styles.cardsGrid}>
@@ -123,28 +185,37 @@ export default function Dashboard() {
           </div>
 
           <div style={styles.progressBarBg}>
-            <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 1 }} style={styles.progressFill} />
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${percent}%` }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              style={styles.progressFill}
+            />
           </div>
 
           <div style={styles.lessonList}>
             {lessons.map(l => {
-              // FIX: Convert to string to match database key
-              const isDone = progress[String(l.id)] === true;
-
+              const isDone = progress[String(l.id)];
               return (
                 <div key={l.id} style={styles.lessonRow}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                    <div style={{ 
-                      width: 12, height: 12, borderRadius: '50%', 
-                      background: isDone ? '#22c55e' : '#e2e8f0',
-                      boxShadow: isDone ? '0 0 12px rgba(34, 197, 94, 0.4)' : 'none'
+                  <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
+                    <div style={{
+                      width: 12, height: 12, borderRadius: "50%",
+                      background: isDone ? "#22c55e" : "#e2e8f0",
+                      boxShadow: isDone ? "0 0 12px rgba(34, 197, 94, 0.4)" : "none",
+                      transition: "all 0.3s ease"
                     }} />
                     <div>
                       <Link to={`/dashboard/lesson${l.id}`} style={styles.lessonLink}>{l.title}</Link>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{l.category}</div>
+                      <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{l.category}</div>
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isDone ? '#22c55e' : '#94a3b8' }}>
+                  <span style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 800,
+                    color: isDone ? "#22c55e" : "#94a3b8",
+                    letterSpacing: "0.5px"
+                  }}>
                     {isDone ? "DONE" : "LOCKED"}
                   </span>
                 </div>
@@ -154,11 +225,11 @@ export default function Dashboard() {
         </section>
 
         {percent === 100 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={styles.certCard}>
-            <div style={{ fontSize: '2rem' }}>🎓</div>
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={styles.certCard}>
+            <div style={{ fontSize: "2rem" }}>🎓</div>
             <div>
-              <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Credential Unlocked</h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>Professional Cybersecurity Foundations</p>
+              <h4 style={{ margin: 0, fontSize: "1.1rem" }}>Credential Unlocked</h4>
+              <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.8 }}>Professional Cybersecurity Foundations</p>
             </div>
             <button onClick={() => navigate("/download-certificate")} style={styles.downloadBtn}>Download PNG</button>
           </motion.div>
@@ -178,10 +249,13 @@ function AnalyticsCard({ title, value, sub, color }) {
   );
 }
 
+// ... keep your `styles` object from before unchanged
+
+
 const styles = {
   layout: { display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, sans-serif' },
   backdrop: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 80 },
-  menuBtn: { position: 'fixed', top: 25, left: 25, zIndex: 100, background: '#0f172a', color: 'white', border: 'none', borderRadius: '50%', width: 45, height: 45, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', fontSize: '1.2rem' },
+  menuBtn: { position: 'fixed', top: 25, left: 25, zIndex: 100, background: '#0f172a', color: 'white', border: 'none', borderRadius: '50%', width: 45, height: 45, cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   sidebar: { position: 'fixed', width: 280, height: '100%', background: '#0f172a', color: 'white', zIndex: 90, boxShadow: '10px 0 40px rgba(0,0,0,0.15)' },
   logoRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 },
   logoBox: { width: 32, height: 32, background: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', borderRadius: 6 },
@@ -189,7 +263,8 @@ const styles = {
   logoText: { fontSize: '1.2rem', fontWeight: 900, letterSpacing: '1px', margin: 0 },
   profileSection: { textAlign: 'center', marginBottom: 40, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 30 },
   avatar: { width: 64, height: 64, background: '#3b82f6', borderRadius: '50%', margin: '0 auto 15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 800, color: 'white' },
-  profileName: { fontSize: '1.1rem', fontWeight: 700, margin: '0 0 5px 0', color: 'white' },
+  profileName: { fontSize: '1.1rem', fontWeight: 700, margin: '0 0 5px 0', color: 'white', cursor: 'pointer' },
+  nameInput: { background: 'rgba(255,255,255,0.1)', border: '1px solid #3b82f6', color: 'white', padding: '5px', borderRadius: '5px', textAlign: 'center', fontSize: '1rem', width: '80%', marginBottom: '5px', outline: 'none' },
   profileRole: { fontSize: '0.75rem', opacity: 0.5, fontWeight: 600, letterSpacing: '1px' },
   sideNav: { display: 'flex', flexDirection: 'column', gap: 8 },
   sideLink: { background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', textAlign: 'left', padding: '12px 15px', borderRadius: 10, cursor: 'pointer', fontSize: '0.95rem', fontWeight: 500 },
@@ -213,5 +288,6 @@ const styles = {
   lessonRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 0', borderBottom: '1px solid #f1f5f9' },
   lessonLink: { textDecoration: 'none', color: '#0f172a', fontWeight: 700 },
   certCard: { marginTop: 40, background: '#0f172a', color: 'white', padding: '25px 30px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 25 },
-  downloadBtn: { marginLeft: 'auto', background: '#22c55e', border: 'none', padding: '12px 20px', borderRadius: 10, color: '#0f172a', fontWeight: 800, cursor: 'pointer' }
+  downloadBtn: { marginLeft: 'auto', background: '#22c55e', border: 'none', padding: '12px 20px', borderRadius: 10, color: '#0f172a', fontWeight: 800, cursor: 'pointer' },
+  loadingScreen: { display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', color: '#64748b', background: '#f8fafc' }
 };
