@@ -3,12 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { createClient } from "@supabase/supabase-js";
 import "./Login.css";
+import supabase from "../supabaseClient";
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
 interface LoginProps {
   onClose?: () => void;
 }
