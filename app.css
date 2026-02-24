@@ -1,0 +1,74 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+}
+
+.container {
+  padding: 40px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header nav a {
+  margin: 0 10px;
+  text-decoration: none;
+  color: #333;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  background: #9cff00;
+  cursor: pointer;
+}
+
+.btn.dark {
+  background: #111;
+  color: white;
+}
+
+.hero {
+  margin-top: 60px;
+  max-width: 600px;
+}
+
+.services {
+  margin-top: 60px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.card {
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+}
+
+.card.green {
+  background: #9cff00;
+}
+
+.contact {
+  margin-top: 60px;
+}
+
+.contact form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+}
+
+.contact input,
+.contact textarea {
+  margin-bottom: 10px;
+  padding: 10px;
+}
