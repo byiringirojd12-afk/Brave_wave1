@@ -277,5 +277,43 @@ const styles: any = {
   lessonInfo: { display: 'flex', alignItems: 'center', gap: 15 },
   lessonTitle: { margin: 0, fontSize: '1rem', fontWeight: 600 },
   lessonMeta: { fontSize: '0.8rem', color: '#64748b' },
-  loadingContainer: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#020617' }
+  loadingContainer: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#020617' },
+  
+  // --- MEDIA QUERIES --- 
+  
+  "@media (max-width: 1024px)": {
+    sidebar: {
+      width: '240px', // for tablets
+    },
+    main: {
+      padding: '30px 40px',
+    },
+    title: {
+      fontSize: '1.8rem',
+    },
+    avatar: {
+      width: 40,
+      height: 40,
+      fontSize: '1rem',
+    },
+  },
+  
+  "@media (max-width: 600px)": {
+    sidebar: {
+      width: '100%',
+      height: 'auto',
+    },
+    sidebarContent: {
+      padding: '15px',
+    },
+    main: {
+      padding: '20px 30px',
+    },
+    statsGrid: {
+      gridTemplateColumns: '1fr', // Stack the stats
+    },
+    lessonRow: {
+      padding: '10px 16px',
+    },
+  },
 };
