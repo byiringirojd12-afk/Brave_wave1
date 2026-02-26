@@ -1,319 +1,273 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Shield, BookOpen, BarChart2, LogOut, 
-  ChevronRight, Lock, CheckCircle2, Zap,
-  Clock, Award, Edit3, Check, X
+  Shield, LogOut, Menu, X, CheckCircle2, 
+  Trophy, Activity, Radio, ChevronRight, 
+  AlertTriangle, Lock, Cpu
 } from "lucide-react";
+import supabase from "../supabaseClient";
 
-// 1. Matched to your App.tsx routes
+// --- Lessons Configuration ---
 const lessons = [
-  { id: 1, path: "/dashboard/lesson1", title: "Intro to Cybersecurity", category: "Basics", duration: "45m" },
-  { id: 2, path: "/dashboard/lesson2", title: "Ethical Hacking", category: "Offensive", duration: "1.2h" },
-  { id: 3, path: "/dashboard/lesson3", title: "Internet Governance", category: "Policy", duration: "30m" },
-  { id: 4, path: "/dashboard/lesson4", title: "How the Internet Works", category: "Infrastructure", duration: "1h" },
+  { id: 1, path: "/dashboard/lesson1", title: "Neural Network Defense", level: "Beginner", time: "15 min", category: "CYBER-AI" },
+  { id: 2, path: "/dashboard/lesson2", title: "Infiltration Tactics", level: "Intermediate", time: "45 min", category: "OFFENSIVE" },
+  { id: 3, path: "/dashboard/lesson3", title: "Digital Sovereignty", level: "Beginner", time: "20 min", category: "GOVERNANCE" },
+  { id: 4, path: "/dashboard/lesson4", title: "Quantum Encryption", level: "Advanced", time: "60 min", category: "CRYPTOGRAPHY" },
 ];
-
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [userName, setUserName] = useState("Agent");
   const [loading, setLoading] = useState(true);
-  
-  // --- NAME EDITING STATE ---
-  const [name, setName] = useState(localStorage.getItem("username") || "Student");
-  const [tempName, setTempName] = useState(name);
-  const [isEditingName, setIsEditingName] = useState(false);
-
-  const [completedLessons] = useState<number[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [completedLessonIds, setCompletedLessonIds] = useState<number[]>([]);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/", { replace: true }); return; }
 
-  // --- SAVE NAME LOGIC ---
-  const handleSaveName = () => {
-    const trimmedName = tempName.trim();
-    if (trimmedName) {
-      setName(trimmedName);
-      localStorage.setItem("username", trimmedName);
-      setIsEditingName(false);
-    }
+      // Fetch username
+      const { data: userData } = await supabase.from("users").select("username").eq("user_id", user.id).single();
+      if (userData?.username) setUserName(userData.username);
+
+      // Fetch progress
+      let { data: progressData } = await supabase
+        .from("user_progress")
+        .select("lesson_id, completed")
+        .eq("user_id", user.id);
+
+      // Auto-create missing lessons
+      const existingLessonIds = progressData?.map(p => p.lesson_id) || [];
+      const missingLessons = lessons.filter(l => !existingLessonIds.includes(l.id));
+      if (missingLessons.length) {
+        await supabase.from("user_progress").upsert(
+          missingLessons.map(l => ({ user_id: user.id, lesson_id: l.id, completed: false })),
+          { onConflict: ["user_id", "lesson_id"] }
+        );
+        progressData = [...(progressData || []), ...missingLessons.map(l => ({ lesson_id: l.id, completed: false }))];
+      }
+
+      setCompletedLessonIds(progressData?.filter(p => p.completed).map(p => p.lesson_id) || []);
+      setTimeout(() => setLoading(false), 800);
+    };
+    fetchData();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
   };
 
-  const percent = Math.round((completedLessons.length / lessons.length) * 100);
+  const completionPercentage = Math.round((completedLessonIds.length / lessons.length) * 100);
 
-  if (loading) return <LoadingState />;
+  if (loading) return (
+    <div style={styles.loadingScreen}>
+      <motion.div animate={{ rotate: [0, 360] }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
+        <Cpu size={50} color="#3b82f6" />
+      </motion.div>
+      <p style={{ marginTop: 20, fontSize: '0.8rem', letterSpacing: 2, color: '#3b82f6' }}>INITIALIZING NEURAL LINK...</p>
+    </div>
+  );
 
   return (
-    <div style={styles.container}>
-      <div style={styles.glowOrb} />
-      
-      {/* SIDEBAR */}
-      <motion.aside animate={{ width: sidebarOpen ? 280 : 80 }} style={styles.sidebar}>
-        <div style={styles.sidebarContent}>
-          <div style={styles.logoArea}>
-            <div style={styles.logoIcon}><Shield size={20} fill="#3b82f6" /></div>
-            {sidebarOpen && <motion.span initial={{opacity:0}} animate={{opacity:1}} style={styles.logoText}>BRAVE WAVE</motion.span>}
-          </div>
+    <div style={styles.appContainer}>
+      <div style={styles.meshBg} />
 
-          <div style={styles.navGroup}>
-            <SidebarItem icon={<BookOpen size={20}/>} label="Academy" active open={sidebarOpen} />
-            <SidebarItem icon={<BarChart2 size={20}/>} label="Analytics" open={sidebarOpen} onClick={() => navigate('/analytics')} />
-            <SidebarItem icon={<Award size={20}/>} label="Certificates" open={sidebarOpen} />
-          </div>
-
-          <div style={styles.sidebarFooter}>
+      {/* Sidebar */}
+      <motion.aside animate={{ width: sidebarOpen ? 280 : 85 }} style={styles.sidebar}>
+        <div style={styles.sidebarBrand}>
+          <div style={styles.logoHex}><Shield size={20} fill="#fff" /></div>
+          <AnimatePresence>
             {sidebarOpen && (
-               <button onClick={() => { localStorage.clear(); navigate("/login"); }} style={styles.logoutBtn}>
-                <LogOut size={18} /> Logout
-               </button>
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={styles.brandName}>
+                SENTINEL<span style={{ color: "#3b82f6" }}>_OS</span>
+              </motion.span>
             )}
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.toggleBtn}>
-              <ChevronRight style={{ transform: sidebarOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: '0.3s' }} />
-            </button>
-          </div>
+          </AnimatePresence>
         </div>
+
+        <nav style={styles.navStack}>
+          <p style={styles.navHeader}>{sidebarOpen ? "OPERATIONAL MODULES" : "•••"}</p>
+          {lessons.map((lesson) => (
+            <div key={lesson.id} onClick={() => navigate(lesson.path)} style={styles.navItem}>
+              <div style={styles.navIconBox}>
+                {completedLessonIds.includes(lesson.id) ? <CheckCircle2 size={18} color="#10b981" /> : <Radio size={18} color="#475569" />}
+              </div>
+              {sidebarOpen && <span style={styles.navLabel}>{lesson.title}</span>}
+            </div>
+          ))}
+        </nav>
+
+        <button style={styles.logoutBtn} onClick={() => setShowLogoutConfirm(true)}>
+          <div style={styles.logoutIconBox}><LogOut size={18} /></div>
+          <AnimatePresence>
+            {sidebarOpen && (
+              <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} style={styles.logoutText}>
+                Terminate Session
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
       </motion.aside>
 
-      {/* MAIN CONTENT */}
-      <main style={styles.main}>
-        <header style={styles.header}>
-          <div>
-            <h1 style={styles.title}>Operational Dashboard</h1>
-            
-            {/* EDITABLE NAME SECTION */}
-            <div style={styles.nameContainer}>
-              <p style={styles.subtitle}>Welcome back, </p>
-              <AnimatePresence mode="wait">
-                {isEditingName ? (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -10 }} 
-                    animate={{ opacity: 1, x: 0 }} 
-                    exit={{ opacity: 0 }}
-                    style={styles.editWrapper}
-                  >
-                    <input 
-                      autoFocus
-                      style={styles.nameInput}
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-                    />
-                    <button onClick={handleSaveName} style={styles.saveBtn}><Check size={16}/></button>
-                    <button onClick={() => { setIsEditingName(false); setTempName(name); }} style={styles.cancelBtn}><X size={16}/></button>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    style={styles.nameDisplay}
-                    onClick={() => setIsEditingName(true)}
-                  >
-                    <span style={styles.activeName}>{name}</span>
-                    <Edit3 size={14} style={styles.editIcon} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+      {/* Main Content */}
+      <main style={styles.mainContent}>
+        <header style={styles.topBar}>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={styles.menuBtn}>
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <div style={styles.headerRight}>
+            <div style={styles.systemStatus}><div style={styles.pulse} /> ACTIVE_ENCRYPTION</div>
+            <div style={styles.userSection}>
+              <div style={styles.userMeta}>
+                <span style={styles.userRole}>Level 4 Operator</span>
+                <span style={styles.userNameDisplay}>{userName}</span>
+              </div>
+              <div style={styles.avatar}>{userName[0]}</div>
             </div>
-          </div>
-
-          <div style={styles.userBadge}>
-             <div style={styles.avatar}>{name[0].toUpperCase()}</div>
           </div>
         </header>
 
-        {/* STATS */}
-        <div style={styles.statsGrid}>
-          <StatCard title="Overall Progress" value={`${percent}%`} icon={<Zap size={20} color="#3b82f6"/>} trend="Active" />
-          <StatCard title="System Rank" value={percent > 70 ? "Specialist" : "Recruit"} icon={<Shield size={20} color="#22c55e"/>} trend="Verifying" />
+        <div style={styles.scrollContainer}>
+          <div style={styles.contentWidth}>
+            {/* Hero */}
+            <section style={styles.heroSection}>
+              <div style={styles.heroMain}>
+                <h1 style={styles.heroTitle}>System Overview: {userName}</h1>
+                <p style={styles.heroSub}>Global threat level: <span style={{color: '#f87171'}}>MODERATE</span>. Continuing your security clearance path.</p>
+                <div style={styles.progressBox}>
+                  <div style={styles.progressText}><span>SOCIETAL SYNCHRONIZATION</span><span>{completionPercentage}%</span></div>
+                  <div style={styles.progressTrack}>
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${completionPercentage}%` }} style={styles.progressFill} />
+                  </div>
+                </div>
+              </div>
+              <div style={styles.heroSide}>
+                <div style={styles.miniStat}><Trophy size={22} color="#fbbf24" /><span style={styles.statVal}>{completedLessonIds.length}</span><span style={styles.statDim}>CLEARED</span></div>
+                <div style={styles.miniStat}><Activity size={22} color="#3b82f6" /><span style={styles.statVal}>{lessons.length - completedLessonIds.length}</span><span style={styles.statDim}>IN-QUEUE</span></div>
+              </div>
+            </section>
+
+            {/* Grid */}
+            <div style={styles.grid}>
+              {lessons.map((lesson) => {
+                const isDone = completedLessonIds.includes(lesson.id);
+                return (
+                  <motion.div key={lesson.id} whileHover={{ y: -8, backgroundColor: "rgba(30, 41, 59, 0.5)" }} onClick={() => navigate(lesson.path)}
+                    style={{...styles.card, border: isDone ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid rgba(255,255,255,0.05)"}}>
+                    <div style={styles.cardHeader}><span style={styles.catTag}>{lesson.category}</span><span style={styles.timeTag}>{lesson.time}</span></div>
+                    <h3 style={styles.cardTitle}>{lesson.title}</h3>
+                    <div style={styles.cardFooter}>
+                      <div style={styles.cardStatus}>{isDone ? <Lock size={14} color="#10b981" /> : <Radio size={14} color="#3b82f6" />}<span style={{marginLeft: 8, color: isDone ? "#10b981" : "#3b82f6"}}>{isDone ? "ENCRYPTED" : "ACCESS"}</span></div>
+                      <ChevronRight size={18} color="#475569" />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
         </div>
-
-        {/* LESSON LIST */}
-        <section style={styles.coursePanel}>
-          <div style={styles.panelHead}>
-            <h2 style={styles.panelTitle}>Curriculum Path</h2>
-            <div style={styles.progressCounter}>{completedLessons.length}/{lessons.length} Complete</div>
-          </div>
-          
-          <div style={styles.progressBarContainer}>
-            <motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} style={styles.progressBarFill} />
-          </div>
-
-          <div style={styles.lessonContainer}>
-            {lessons.map((lesson, index) => (
-              <LessonRow 
-                key={lesson.id} 
-                lesson={lesson} 
-                index={index}
-                isDone={completedLessons.includes(lesson.id)}
-                isUnlocked={true} 
-                onClick={() => navigate(lesson.path)} 
-              />
-            ))}
-          </div>
-        </section>
       </main>
+
+      {/* Logout Modal */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={styles.modalOverlay}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} style={styles.modalContent}>
+              <AlertTriangle size={48} color="#ef4444" style={{ marginBottom: 20 }} />
+              <h2 style={{ marginBottom: 10 }}>Terminate Session?</h2>
+              <p style={{ color: "#94a3b8", textAlign: 'center', marginBottom: 30 }}>You are about to disconnect from the secure neural link. All unsaved progress will be lost.</p>
+              <div style={styles.modalActions}>
+                <button onClick={() => setShowLogoutConfirm(false)} style={styles.cancelBtn}>Cancel</button>
+                <button onClick={handleLogout} style={styles.confirmBtn}>Confirm Disconnect</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-/* --- REUSABLE UI COMPONENTS --- (SidebarItem, StatCard, LessonRow, LoadingState stay mostly same) */
-
-function SidebarItem({ icon, label, active, open, onClick }: any) {
-  return (
-    <motion.div 
-      whileHover={{ x: 5, backgroundColor: 'rgba(255,255,255,0.05)' }}
-      onClick={onClick}
-      style={{
-        ...styles.navItem,
-        backgroundColor: active ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-        color: active ? '#3b82f6' : '#94a3b8',
-        justifyContent: open ? 'flex-start' : 'center'
-      }}
-    >
-      {icon}
-      {open && <span style={{ marginLeft: 12, fontWeight: 500 }}>{label}</span>}
-    </motion.div>
-  );
-}
-
-function StatCard({ title, value, icon, trend }: any) {
-  return (
-    <motion.div whileHover={{ y: -5 }} style={styles.statCard}>
-      <div style={styles.statHeader}>
-        <div style={styles.statIcon}>{icon}</div>
-        <span style={styles.statTrend}>{trend}</span>
-      </div>
-      <div style={styles.statValue}>{value}</div>
-      <div style={styles.statTitle}>{title}</div>
-    </motion.div>
-  );
-}
-
-function LessonRow({ lesson, index, isDone, isUnlocked, onClick }: any) {
-  return (
-    <motion.div 
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.1 }}
-      whileHover={isUnlocked ? { x: 10, backgroundColor: 'rgba(59, 130, 246, 0.05)' } : {}}
-      onClick={isUnlocked ? onClick : undefined}
-      style={{
-        ...styles.lessonRow,
-        opacity: isUnlocked ? 1 : 0.4,
-        cursor: isUnlocked ? 'pointer' : 'not-allowed',
-        border: isUnlocked ? '1px solid rgba(59, 130, 246, 0.1)' : '1px solid rgba(255,255,255,0.03)'
-      }}
-    >
-      <div style={styles.lessonInfo}>
-        <div style={styles.statusDot}>
-          {isDone ? <CheckCircle2 size={18} color="#22c55e" /> : <Zap size={18} color="#fbbf24" />}
-        </div>
-        <div>
-          <h4 style={styles.lessonTitle}>{lesson.title}</h4>
-          <span style={styles.lessonMeta}>{lesson.category} • {lesson.duration}</span>
-        </div>
-      </div>
-      <ChevronRight size={18} color={isUnlocked ? "#3b82f6" : "#64748b"} />
-    </motion.div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div style={styles.loadingContainer}>
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
-        <Shield size={40} color="#3b82f6" />
-      </motion.div>
-    </div>
-  );
-}
-
+// --- High-End Styles ---
 const styles: any = {
-  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#020617', color: '#f8fafc', fontFamily: 'Inter, sans-serif', overflow: 'hidden', position: 'relative' },
-  glowOrb: { position: 'absolute', top: '-10%', right: '-10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)', zIndex: 0 },
-  sidebar: { backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', borderRight: '1px solid rgba(255,255,255,0.05)', zIndex: 10, height: '100vh', display: 'flex', flexDirection: 'column' },
-  sidebarContent: { padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' },
-  logoArea: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 },
-  logoIcon: { background: '#1e293b', padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' },
-  logoText: { fontWeight: 800, fontSize: '1.1rem', letterSpacing: 1 },
-  navGroup: { display: 'flex', flexDirection: 'column', gap: 8, flex: 1 },
-  navItem: { display: 'flex', alignItems: 'center', padding: '12px', borderRadius: 12, cursor: 'pointer', transition: '0.2s' },
-  sidebarFooter: { marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 },
-  toggleBtn: { background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 10, alignSelf: 'center' },
-  logoutBtn: { background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '10px', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 600, cursor: 'pointer' },
-  main: { flex: 1, padding: '40px 60px', overflowY: 'auto', zIndex: 1 },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 },
-  title: { fontSize: '2rem', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' },
-  
-  // --- NEW NAME EDIT STYLES ---
-  nameContainer: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 },
-  subtitle: { color: '#94a3b8', margin: 0 },
-  nameDisplay: { display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#3b82f6', fontWeight: 600 },
-  activeName: { borderBottom: '1px dashed #3b82f6' },
-  editIcon: { opacity: 0.6 },
-  editWrapper: { display: 'flex', alignItems: 'center', gap: 6 },
-  nameInput: { background: 'rgba(255,255,255,0.05)', border: '1px solid #3b82f6', borderRadius: 6, color: 'white', padding: '2px 8px', outline: 'none', fontSize: '1rem' },
-  saveBtn: { background: '#22c55e', border: 'none', borderRadius: 4, color: 'white', padding: 4, cursor: 'pointer', display: 'flex' },
-  cancelBtn: { background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 4, color: '#94a3b8', padding: 4, cursor: 'pointer', display: 'flex' },
-  
-  userBadge: { display: 'flex', alignItems: 'center', gap: 15 },
-  avatar: { width: 45, height: 45, background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, border: '2px solid rgba(255,255,255,0.1)', fontSize: '1.2rem' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, marginBottom: 40 },
-  statCard: { background: 'rgba(30, 41, 59, 0.4)', padding: 24, borderRadius: 24, border: '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(5px)' },
-  statHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
-  statValue: { fontSize: '1.8rem', fontWeight: 800, marginBottom: 4 },
-  statTitle: { color: '#94a3b8', fontSize: '0.85rem' },
-  statTrend: { fontSize: '0.7rem', color: '#22c55e', background: 'rgba(34, 197, 94, 0.1)', padding: '4px 8px', borderRadius: 20 },
-  coursePanel: { background: 'rgba(15, 23, 42, 0.4)', borderRadius: 32, padding: 32, border: '1px solid rgba(255,255,255,0.05)' },
-  panelHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  panelTitle: { fontSize: '1.25rem', fontWeight: 700, margin: 0 },
-  progressCounter: { color: '#3b82f6', fontWeight: 600, fontSize: '0.9rem' },
-  progressBarContainer: { height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 10, marginBottom: 30, overflow: 'hidden' },
-  progressBarFill: { height: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', borderRadius: 10 },
-  lessonContainer: { display: 'flex', flexDirection: 'column', gap: 12 },
-  lessonRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderRadius: 20, background: 'rgba(255,255,255,0.02)', transition: '0.2s' },
-  lessonInfo: { display: 'flex', alignItems: 'center', gap: 15 },
-  lessonTitle: { margin: 0, fontSize: '1rem', fontWeight: 600 },
-  lessonMeta: { fontSize: '0.8rem', color: '#64748b' },
-  loadingContainer: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#020617' },
-  
-  // --- MEDIA QUERIES --- 
-  
-  "@media (max-width: 1024px)": {
-    sidebar: {
-      width: '240px', // for tablets
-    },
-    main: {
-      padding: '30px 40px',
-    },
-    title: {
-      fontSize: '1.8rem',
-    },
-    avatar: {
-      width: 40,
-      height: 40,
-      fontSize: '1rem',
-    },
+  appContainer: { display: "flex", height: "100vh", background: "#02040a", color: "#f1f5f9", overflow: "hidden", position: "relative" },
+  meshBg: { 
+    position: "absolute", inset: 0, 
+    background: "radial-gradient(circle at 50% -20%, rgba(59, 130, 246, 0.15), transparent), radial-gradient(circle at 0% 100%, rgba(59, 130, 246, 0.05), transparent)",
+    zIndex: 0, pointerEvents: "none"
   },
-  
-  "@media (max-width: 600px)": {
-    sidebar: {
-      width: '100%',
-      height: 'auto',
-    },
-    sidebarContent: {
-      padding: '15px',
-    },
-    main: {
-      padding: '20px 30px',
-    },
-    statsGrid: {
-      gridTemplateColumns: '1fr', // Stack the stats
-    },
-    lessonRow: {
-      padding: '10px 16px',
-    },
+  loadingScreen: { height: "100vh", width: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", background: "#02040a" },
+
+  // Sidebar Fixed
+  sidebar: { 
+    background: "rgba(3, 7, 18, 0.8)", backdropFilter: "blur(20px)", borderRight: "1px solid rgba(255,255,255,0.05)",
+    display: "flex", flexDirection: "column", padding: "30px 15px", zIndex: 100 
   },
+  sidebarBrand: { display: "flex", alignItems: "center", gap: 15, marginBottom: 50, paddingLeft: 10 },
+  logoHex: { background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", padding: 10, borderRadius: 12, boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)" },
+  brandName: { fontWeight: 900, fontSize: "1.2rem", letterSpacing: "2px" },
+  navStack: { flex: 1, display: "flex", flexDirection: "column", gap: 5 },
+  navHeader: { fontSize: "0.65rem", fontWeight: 800, color: "#475569", marginBottom: 15, paddingLeft: 12, letterSpacing: "1.5px" },
+  navItem: { display: "flex", alignItems: "center", gap: 15, padding: "12px 15px", borderRadius: "12px", cursor: "pointer", transition: "0.2s hover", color: "#94a3b8" },
+  navIconBox: { width: 24, display: "flex", justifyContent: "center" },
+  navLabel: { fontSize: "0.85rem", whiteSpace: "nowrap", fontWeight: 500 },
+
+  // Logout - ANTI-SHAKE SOLUTION
+  logoutBtn: { 
+    marginTop: "auto", background: "rgba(239, 68, 68, 0.05)", border: "1px solid rgba(239, 68, 68, 0.1)", 
+    color: "#ef4444", padding: "14px", borderRadius: "14px", display: "flex", alignItems: "center", 
+    justifyContent: "flex-start", cursor: "pointer", overflow: "hidden", width: "100%"
+  },
+  logoutIconBox: { minWidth: "24px", display: "flex", justifyContent: "center", marginRight: "12px" },
+  logoutText: { fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" },
+
+  // Main
+  mainContent: { flex: 1, display: "flex", flexDirection: "column", zIndex: 1 },
+  topBar: { height: 80, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 40px" },
+  menuBtn: { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", padding: 8, borderRadius: 10, cursor: "pointer" },
+  headerRight: { display: "flex", alignItems: "center", gap: 30 },
+  systemStatus: { fontSize: "0.7rem", fontWeight: 700, color: "#10b981", display: "flex", alignItems: "center", gap: 8, background: "rgba(16, 185, 129, 0.1)", padding: "6px 12px", borderRadius: 20 },
+  pulse: { width: 6, height: 6, background: "#10b981", borderRadius: "50%", boxShadow: "0 0 10px #10b981" },
+  userSection: { display: "flex", alignItems: "center", gap: 15 },
+  userMeta: { textAlign: "right" },
+  userRole: { display: "block", fontSize: "0.6rem", color: "#3b82f6", fontWeight: 800, textTransform: "uppercase" },
+  userNameDisplay: { fontSize: "0.9rem", fontWeight: 600 },
+  avatar: { width: 40, height: 40, borderRadius: 12, background: "linear-gradient(45deg, #1e293b, #0f172a)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 },
+
+  scrollContainer: { flex: 1, overflowY: "auto", padding: "20px 40px" },
+  contentWidth: { maxWidth: "1200px", margin: "0 auto" },
+
+  // Hero Bento
+  heroSection: { display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 20, marginBottom: 40 },
+  heroMain: { background: "rgba(15, 23, 42, 0.5)", border: "1px solid rgba(255,255,255,0.05)", padding: 40, borderRadius: 32, backdropFilter: "blur(10px)" },
+  heroTitle: { fontSize: "2.2rem", fontWeight: 800, marginBottom: 10 },
+  heroSub: { color: "#64748b", marginBottom: 35 },
+  progressBox: { maxWidth: "450px" },
+  progressText: { display: "flex", justifyContent: "space-between", fontSize: "0.7rem", fontWeight: 800, color: "#3b82f6", marginBottom: 12, letterSpacing: 1 },
+  progressTrack: { height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 10, overflow: "hidden" },
+  progressFill: { height: "100%", background: "linear-gradient(90deg, #3b82f6, #60a5fa)", boxShadow: "0 0 15px rgba(59, 130, 246, 0.4)" },
+  heroSide: { display: "flex", flexDirection: "column", gap: 20 },
+  miniStat: { flex: 1, background: "rgba(15, 23, 42, 0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 24, padding: 25, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
+  statVal: { fontSize: "1.8rem", fontWeight: 800, margin: "5px 0" },
+  statDim: { fontSize: "0.65rem", color: "#475569", fontWeight: 700, letterSpacing: 1 },
+
+  // Grid
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 },
+  card: { background: "rgba(15, 23, 42, 0.3)", padding: 25, borderRadius: 24, cursor: "pointer", transition: "0.3s" },
+  cardHeader: { display: "flex", justifyContent: "space-between", marginBottom: 20 },
+  catTag: { fontSize: "0.6rem", fontWeight: 800, color: "#3b82f6", background: "rgba(59, 130, 246, 0.1)", padding: "4px 10px", borderRadius: 8 },
+  timeTag: { fontSize: "0.7rem", color: "#475569" },
+  cardTitle: { fontSize: "1.1rem", fontWeight: 700, marginBottom: 25, lineHeight: 1.4 },
+  cardFooter: { display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 20 },
+  cardStatus: { display: "flex", alignItems: "center", fontSize: "0.75rem", fontWeight: 700 },
+
+  // Modal
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: 20 },
+  modalContent: { background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", padding: 40, borderRadius: 32, maxWidth: 450, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" },
+  modalActions: { display: "flex", gap: 15, width: "100%" },
+  cancelBtn: { flex: 1, background: "transparent", border: "1px solid #1e293b", color: "#fff", padding: "14px", borderRadius: "14px", cursor: "pointer", fontWeight: 600 },
+  confirmBtn: { flex: 1, background: "#ef4444", border: "none", color: "#fff", padding: "14px", borderRadius: "14px", cursor: "pointer", fontWeight: 600 }
 };

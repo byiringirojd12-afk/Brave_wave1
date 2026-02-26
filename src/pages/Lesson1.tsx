@@ -20,7 +20,7 @@ const lessonsData = [
     quiz: [{ q: "What is the 'weakest link'?", opts: ["Software", "Hardware", "Humans"], a: 2 }, { q: "Zero-Day refers to:", opts: ["Unpatched exploit", "Old virus", "New PC"], a: 0 }, { q: "SOC stands for?", opts: ["System Ops", "Security Ops", "Secure Org"], a: 1 }]
   },
   { 
-    id: 2, title: "2. The CIA Triad", videoGuidance: "oF7SBrX7S78",
+    id: 2, title: "2. The CIA Triad", videoGuidance: "U05AM9701zI",
     briefing: {
       objective: "Define the core pillars of data protection.",
       concepts: [

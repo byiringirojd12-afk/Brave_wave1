@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { createClient } from "@supabase/supabase-js";
 import "./Login.css";
 import supabase from "../supabaseClient";
 
@@ -9,10 +8,18 @@ interface LoginProps {
   onClose?: () => void;
 }
 
+// Lessons array
+const lessons = [
+  { id: 1, title: "Intro to Cybersecurity" },
+  { id: 2, title: "Ethical Hacking" },
+  { id: 3, title: "Internet Governance" },
+  { id: 4, title: "How the Internet Works" },
+];
+
 export default function Login({ onClose }: LoginProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
-  const [identifier, setIdentifier] = useState(""); // email or username for login
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
@@ -23,7 +30,6 @@ export default function Login({ onClose }: LoginProps) {
 
   const navigate = useNavigate();
 
-  // Strong password validation
   const isStrongPassword = (pwd: string) =>
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
 
@@ -33,123 +39,153 @@ export default function Login({ onClose }: LoginProps) {
     setLoading(true);
 
     try {
+      // =========================
+      // REGISTER
+      // =========================
       if (mode === "register") {
-        // Frontend validation for registration
         if (!username || !gender || !identifier || !password || !confirmPassword) {
           setError("All fields are required ❌");
           setLoading(false);
           return;
         }
+
         if (password !== confirmPassword) {
           setError("Passwords do not match ❌");
           setLoading(false);
           return;
         }
+
         if (!isStrongPassword(password)) {
           setError("Password must be 8+ chars, uppercase, number & symbol ❌");
           setLoading(false);
           return;
         }
 
-        // Check if username or email already exists
-        const { data: existingUser } = await supabase
-          .from("users")
-          .select("id")
-          .or(`username.eq.${username},email.eq.${identifier}`)
-          .limit(1)
-          .single();
+        const email = identifier.toLowerCase().trim();
 
-        if (existingUser) {
+        // Check if username or email already exists
+        const { data: existingUsers, error: checkError } = await supabase
+          .from("users")
+          .select("user_id")
+          .or(`username.eq.${username},email.eq.${email}`);
+
+        if (checkError) {
+          setError(checkError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (existingUsers && existingUsers.length > 0) {
           setError("Username or Email already exists ❌");
           setLoading(false);
           return;
         }
 
-        // Register with Supabase Auth
-        const { data: registerData, error: registerError } = await supabase.auth.signUp({
-          email: identifier.toLowerCase().trim(),
+        // Create user in Supabase Auth
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
           password,
         });
 
-        if (registerError || !registerData.user) {
-          setError(registerError?.message || "Registration failed ❌");
+        if (signUpError || !signUpData.user) {
+          setError(signUpError?.message || "Registration failed ❌");
           setLoading(false);
           return;
         }
 
-        // Insert additional info (username, gender) into users table
+        // Insert extra user info
         const { error: insertError } = await supabase.from("users").insert([
           {
-            user_id: registerData.user.id,
+            user_id: signUpData.user.id,
             username,
-            email: identifier.toLowerCase().trim(),
+            email,
             gender,
+            role: "student",
           },
         ]);
 
         if (insertError) {
-          setError(insertError.message || "Failed to save user data ❌");
+          setError(insertError.message);
           setLoading(false);
           return;
         }
 
-        alert("✅ Account created! You can now login.");
+        // Initialize user_progress safely
+        const { error: progressError } = await supabase
+          .from("user_progress")
+          .upsert(
+            lessons.map((lesson) => ({
+              user_id: signUpData.user.id,
+              lesson_id: lesson.id,
+              completed: false,
+            })),
+            { onConflict: ["user_id", "lesson_id"] }
+          );
+
+        if (progressError) {
+          console.error("Failed to initialize user_progress:", progressError.message);
+        }
+
+        alert("✅ Account created successfully! Please login.");
         setMode("login");
         setUsername("");
         setIdentifier("");
         setPassword("");
         setConfirmPassword("");
         setGender("");
-      } else {
-        // Login with username or email
+      }
+
+      // =========================
+      // LOGIN
+      // =========================
+      else {
         if (!identifier || !password) {
           setError("Please enter username/email and password ❌");
           setLoading(false);
           return;
         }
 
-        // Fetch email if identifier is a username
-        let emailToLogin = identifier.toLowerCase().trim();
-        const { data: userRecord, error: fetchError } = await supabase
+        const input = identifier.toLowerCase().trim();
+
+        // Find user by username OR email
+        const { data: users, error: fetchError } = await supabase
           .from("users")
           .select("*")
-          .or(`username.eq.${identifier},email.eq.${identifier}`)
-          .limit(1)
-          .single();
+          .or(`username.eq.${input},email.eq.${input}`);
 
-        if (fetchError || !userRecord) {
+        if (fetchError) {
+          setError(fetchError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (!users || users.length === 0) {
           setError("User not found ❌");
           setLoading(false);
           return;
         }
 
-        emailToLogin = userRecord.email;
+        const userRecord = users[0];
 
-        // Sign in with Supabase Auth
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-          email: emailToLogin,
-          password,
-        });
+        // Login with Supabase Auth
+        const { data: loginData, error: loginError } =
+          await supabase.auth.signInWithPassword({
+            email: userRecord.email,
+            password,
+          });
 
         if (loginError || !loginData.session) {
-          setError(loginError?.message || "Authentication failed ❌");
+          setError("Invalid credentials ❌");
           setLoading(false);
           return;
         }
 
-        // ✅ Store token and real user info
-        const storage = rememberMe ? localStorage : sessionStorage;
-        storage.setItem("token", loginData.session.access_token);
-        localStorage.setItem("username", userRecord.username);
-        localStorage.setItem("email", userRecord.email);
-        localStorage.setItem("role", userRecord.role || "student");
-
-        // Navigate to dashboard
+        // Redirect to dashboard
         navigate("/dashboard", { replace: true });
         onClose?.();
       }
     } catch (err: any) {
-      setError(err.message || "Unexpected server error ❌");
+      setError(err.message || "Unexpected error ❌");
     } finally {
       setLoading(false);
     }
@@ -164,9 +200,9 @@ export default function Login({ onClose }: LoginProps) {
         onSubmit={handleSubmit}
       >
         <h2>{mode === "login" ? "Welcome Back" : "Create Account"}</h2>
+
         {error && <div className="login-error">{error}</div>}
 
-        {/* Registration Fields (without Full Name) */}
         {mode === "register" && (
           <>
             <input
@@ -176,7 +212,12 @@ export default function Login({ onClose }: LoginProps) {
               onChange={(e) => setUsername(e.target.value)}
               required
             />
-            <select value={gender} onChange={(e) => setGender(e.target.value)} required>
+
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              required
+            >
               <option value="">Select Gender</option>
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -185,7 +226,6 @@ export default function Login({ onClose }: LoginProps) {
           </>
         )}
 
-        {/* Email/Username Field */}
         <input
           type="text"
           placeholder={mode === "login" ? "Email or Username" : "Email"}
@@ -194,7 +234,6 @@ export default function Login({ onClose }: LoginProps) {
           required
         />
 
-        {/* Password */}
         <div className="password-wrapper">
           <input
             type={showPassword ? "text" : "password"}
@@ -203,12 +242,11 @@ export default function Login({ onClose }: LoginProps) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <span className="toggle-pass" onClick={() => setShowPassword(!showPassword)}>
+          <span onClick={() => setShowPassword(!showPassword)}>
             {showPassword ? "🙈" : "👁️"}
           </span>
         </div>
 
-        {/* Confirm Password */}
         {mode === "register" && (
           <input
             type="password"
@@ -219,37 +257,36 @@ export default function Login({ onClose }: LoginProps) {
           />
         )}
 
-        {/* Extra login options */}
         {mode === "login" && (
-          <div className="login-extra">
-            <label>
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              Remember Me
-            </label>
-          </div>
+          <label>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            Remember Me
+          </label>
         )}
 
         <button type="submit" disabled={loading}>
-          {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Register"}
+          {loading
+            ? "Please wait..."
+            : mode === "login"
+            ? "Sign In"
+            : "Register"}
         </button>
 
-        <div className="login-switch">
-          <p>
-            {mode === "login" ? "New here?" : "Already a member?"}{" "}
-            <span
-              onClick={() => {
-                setMode(mode === "login" ? "register" : "login");
-                setError("");
-              }}
-            >
-              {mode === "login" ? "Create account" : "Sign in"}
-            </span>
-          </p>
-        </div>
+        <p>
+          {mode === "login" ? "New here?" : "Already a member?"}{" "}
+          <span
+            onClick={() => {
+              setMode(mode === "login" ? "register" : "login");
+              setError("");
+            }}
+          >
+            {mode === "login" ? "Create account" : "Sign in"}
+          </span>
+        </p>
       </motion.form>
     </div>
   );

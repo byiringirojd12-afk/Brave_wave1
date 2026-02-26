@@ -1,146 +1,277 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import "./Lesson.css";
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Globe, ShieldCheck, Cpu, Network, Server, Anchor, Zap, 
+  ChevronRight, BookOpen, Lock, Users, CheckCircle2, XCircle, 
+  Trophy, BookMarked, X, Info, Activity, Database, Waves,
+  Layers, ArrowRight, Share2, MousePointer2, GitBranch
+} from 'lucide-react';
 
-const SectionTitle = ({ title }: { title: string }) => {
-  return (
-    <h2 className="section-title" style={{ borderLeft: '5px solid var(--accent)', paddingLeft: '15px', color: 'var(--primary)', marginBottom: '1.5rem' }}>
-      {title}
-    </h2>
-  );
-};
+// --- DATA: GLOSSARY ---
+const GLOSSARY = [
+  { term: "BGP (Border Gateway Protocol)", def: "The routing protocol used to exchange routing information between different networks." },
+  { term: "Anycast", def: "A network addressing method where a single IP address is shared by multiple devices in different locations." },
+  { term: "Transit-Free", def: "A network that doesn't pay any other network for transit, usually a Tier 1 provider." },
+  { term: "IXP (Internet Exchange Point)", def: "A location where multiple networks connect and exchange traffic locally to reduce latency and cost." },
+  { term: "RPKI", def: "Resource Public Key Infrastructure: a method to cryptographically validate BGP route announcements to prevent hijacks." },
+  { term: "DNSSEC", def: "Domain Name System Security Extensions: adds authentication to DNS responses to prevent tampering." },
+];
+
+// --- DATA: QUIZ ---
+const QUIZ_QUESTIONS = [
+  {
+    question: "What happens during a BGP Hijack?",
+    options: ["The physical router is stolen", "A network falsely claims the shortest path to an IP range", "The internet is turned off for a country", "Data is encrypted by a virus"],
+    correct: 1,
+    explanation: "In a BGP hijack, a malicious actor broadcasts 'I am the best path for this traffic,' causing data to be diverted to their servers."
+  },
+  {
+    question: "What is the primary function of an IXP?",
+    options: ["Encrypt internet traffic", "Exchange local traffic between ISPs", "Store user data", "Control DNS servers"],
+    correct: 1,
+    explanation: "IXPs allow networks to exchange traffic locally, reducing latency and costs."
+  },
+  {
+    question: "Why is IPv6 needed?",
+    options: ["It speeds up the internet", "It provides virtually unlimited IP addresses", "It replaces DNS", "It encrypts all traffic automatically"],
+    correct: 1,
+    explanation: "IPv6 provides 340 undecillion addresses, solving the IPv4 address exhaustion problem and enabling every device to have a unique IP."
+  }
+];
 
 const InternetSocietyPage = () => {
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('physical');
+  const [showGlossary, setShowGlossary] = useState(false);
+  const [score, setScore] = useState(0);
+  const [isFinished, setIsFinished] = useState(false);
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 30 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.6 }
+  const theme = {
+    bg: '#0d1117',
+    sidebar: '#010409',
+    card: '#161b22',
+    accent: '#2f81f7',
+    border: '#30363d',
+    text: '#c9d1d9',
+    dim: '#8b949e'
+  };
+
+  const s: { [key: string]: React.CSSProperties } = {
+    layout: { display: 'flex', minHeight: '100vh', backgroundColor: theme.bg, color: theme.text, fontFamily: 'Inter, sans-serif' },
+    sidebar: { 
+      width: '260px', 
+      backgroundColor: theme.sidebar, 
+      borderRight: `1px solid ${theme.border}`, 
+      padding: '30px 15px', 
+      position: 'fixed', 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      gap: '10px'
+    },
+    main: { marginLeft: '260px', flex: 1, padding: '40px 60px' },
+    navItem: { 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: '12px', 
+      padding: '12px 16px', 
+      borderRadius: '10px', 
+      cursor: 'pointer', 
+      border: 'none', 
+      background: 'transparent', 
+      color: theme.dim, 
+      fontSize: '13px', 
+      fontWeight: 600, 
+      transition: '0.2s', 
+      textAlign: 'left' 
+    },
+    activeNavItem: { background: 'rgba(47, 129, 247, 0.15)', color: theme.accent, border: `1px solid ${theme.accent}` },
+    contentCard: { background: theme.card, border: `1px solid ${theme.border}`, borderRadius: '20px', padding: '30px', marginBottom: '24px' }
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'physical':
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h1 style={{ fontSize: '36px', fontWeight: 800, marginBottom: '10px' }}>Physical Backbone</h1>
+            <p style={{ color: theme.dim, marginBottom: '40px' }}>Explore the engineering that physically powers the internet.</p>
+
+            <div style={s.contentCard}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}><Waves size={20} color={theme.accent} /> Subsea Cables</h3>
+              <p style={{ lineHeight: '1.7', marginTop: '15px' }}>
+                Subsea fiber-optic cables like <b>Marea</b> and <b>SEA-ME-WE 6</b> span thousands of kilometers to connect continents. They carry ~99% of international data, providing the backbone for global connectivity. Landing stations secure and manage these cables, ensuring redundancy if any line fails.
+              </p>
+            </div>
+
+            <div style={s.contentCard}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}><Database color={theme.accent} /> Data Centers</h3>
+              <p style={{ lineHeight: '1.7', marginTop: '15px' }}>
+                Data centers host servers and networking infrastructure. Tier I-IV classifications measure redundancy and uptime. Modern facilities use AI-driven cooling and backup power to ensure 24/7 operations.
+              </p>
+            </div>
+
+            <div style={s.contentCard}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}><Activity color={theme.accent} /> IXPs</h3>
+              <p style={{ lineHeight: '1.7', marginTop: '15px' }}>
+                Internet Exchange Points (IXPs) let multiple networks exchange traffic locally. By doing this, ISPs reduce latency, improve speeds, and cut costs. Famous IXPs include <b>DE-CIX</b> in Germany and <b>LINX</b> in the UK.
+              </p>
+            </div>
+
+            <div style={s.contentCard}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'white' }}><Network color={theme.accent} /> Terrestrial Fiber</h3>
+              <p style={{ lineHeight: '1.7', marginTop: '15px' }}>
+                Beyond oceans, fiber-optic cables crisscross continents connecting cities and countries. Metropolitan networks and long-haul fibers enable high-speed data transmission and redundancy for resilient global internet.
+              </p>
+            </div>
+          </motion.div>
+        );
+      case 'security':
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h1 style={{ fontSize: '36px', fontWeight: 800, marginBottom: '10px' }}>Routing Security</h1>
+            <p style={{ color: theme.dim, marginBottom: '40px' }}>How the internet protects itself from malicious routing and misconfigurations.</p>
+
+            <div style={{ ...s.contentCard, borderLeft: `4px solid ${theme.accent}` }}>
+              <h3 style={{ color: 'white' }}><ShieldCheck /> BGP Threats</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                BGP relies on trust between networks. Threats include <b>route hijacks</b> (traffic diversion), <b>route leaks</b> (incorrect announcements), and misconfigurations that can cause outages or interception.
+              </p>
+            </div>
+
+            <div style={{ ...s.contentCard, borderLeft: `4px solid ${theme.accent}` }}>
+              <h3 style={{ color: 'white' }}><Lock /> RPKI & Route Filtering</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                RPKI allows operators to cryptographically sign IP prefixes. Routers validate announcements to reject invalid routes. This helps prevent hijacks and increases overall internet security.
+              </p>
+            </div>
+
+            <div style={{ ...s.contentCard, borderLeft: `4px solid ${theme.accent}` }}>
+              <h3 style={{ color: 'white' }}><Globe /> MANRS Initiative</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                The <b>Mutually Agreed Norms for Routing Security (MANRS)</b> provides best practices for ISPs to reduce routing threats. This includes filtering, anti-spoofing, and coordination with other operators.
+              </p>
+            </div>
+
+            <div style={{ ...s.contentCard, borderLeft: `4px solid ${theme.accent}` }}>
+              <h3 style={{ color: 'white' }}><BookOpen /> DNS Security</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                DNSSEC adds cryptographic validation to DNS responses, preventing attackers from redirecting users to malicious websites. This strengthens trust in internet addressing.
+              </p>
+            </div>
+          </motion.div>
+        );
+      case 'protocols':
+        return (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h1 style={{ fontSize: '36px', fontWeight: 800, marginBottom: '10px' }}>Protocol Evolution</h1>
+            <p style={{ color: theme.dim, marginBottom: '40px' }}>The logical protocols that govern every byte sent online.</p>
+
+            <div style={s.contentCard}>
+              <h3 style={{ color: 'white' }}>IPv4 vs IPv6</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                IPv4 offers 4.3 billion addresses, insufficient for modern demand. IPv6 provides 340 undecillion addresses, enabling every device—from phones to cars—to have a unique IP. IPv6 also includes built-in security and simplified routing.
+              </p>
+            </div>
+
+            <div style={s.contentCard}>
+              <h3 style={{ color: 'white' }}>Routing Protocols</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                <b>BGP:</b> Inter-domain routing between ISPs.<br/>
+                <b>OSPF:</b> Intra-domain routing for fast convergence.<br/>
+                <b>IS-IS:</b> Used in large service provider networks for scalable routing.
+              </p>
+            </div>
+
+            <div style={s.contentCard}>
+              <h3 style={{ color: 'white' }}>Transport & Application Layers</h3>
+              <p style={{ marginTop: '15px', lineHeight: '1.6' }}>
+                <b>TCP:</b> Reliable, ordered delivery (web, email).<br/>
+                <b>UDP:</b> Fast, best-effort delivery (gaming, VoIP).<br/>
+                <b>HTTP/HTTPS:</b> Protocols for web communication; HTTPS encrypts traffic.<br/>
+                <b>DNS:</b> Resolves human-readable domain names to IP addresses.
+              </p>
+            </div>
+          </motion.div>
+        );
+      case 'quiz':
+        return (
+          <div style={s.contentCard}>
+            <h2 style={{ marginBottom: '30px', textAlign: 'center' }}>Knowledge Assessment</h2>
+            {QUIZ_QUESTIONS.map((q, i) => (
+              <div key={i} style={{ marginBottom: '20px' }}>
+                <p style={{ fontSize: '18px', fontWeight: 600, marginBottom: '15px' }}>{q.question}</p>
+                {q.options.map((opt, idx) => (
+                  <button key={idx} style={{ 
+                    width: '100%', padding: '15px', marginBottom: '10px', borderRadius: '10px', 
+                    background: theme.sidebar, border: `1px solid ${theme.border}`, color: 'white', textAlign: 'left', cursor: 'pointer'
+                  }} onClick={() => {
+                    if(idx === q.correct) setScore(prev => prev + 1);
+                    if(i === QUIZ_QUESTIONS.length - 1) setIsFinished(true);
+                  }}>
+                    {opt}
+                  </button>
+                ))}
+                <p style={{ fontSize: '13px', color: theme.dim }}>{q.explanation}</p>
+              </div>
+            ))}
+            {isFinished && <p style={{ textAlign: 'center', fontWeight: 700, marginTop: '20px', color: theme.accent }}>You scored {score} / {QUIZ_QUESTIONS.length}</p>}
+          </div>
+        );
+      default: return null;
+    }
   };
 
   return (
-    <div className="lesson-wrapper" style={{ background: 'var(--bg)', minHeight: '100vh', paddingBottom: '50px' }}>
-      <motion.div 
-        className="lesson-card"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        style={{ maxWidth: '950px', margin: '0 auto', background: '#fff', padding: '40px', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}
-      >
-        <header className="lesson-header" style={{ textAlign: 'center', marginBottom: '50px' }}>
-          <div className="badge" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', padding: '6px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Infrastructure Module
+    <div style={s.layout}>
+      <aside style={s.sidebar}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px', padding: '0 10px' }}>
+          <Zap size={24} color={theme.accent} fill={theme.accent} />
+          <span style={{ fontWeight: 900, fontSize: '18px', color: 'white', letterSpacing: '1px' }}>BRAVE WAVE</span>
+        </div>
+
+        <div style={{ fontSize: '11px', color: theme.dim, fontWeight: 800, marginBottom: '10px', paddingLeft: '16px' }}>MODULES</div>
+        
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <button onClick={() => setActiveTab('physical')} style={{ ...s.navItem, ...(activeTab === 'physical' ? s.activeNavItem : {}) }}><Layers size={18} /> Physical Backbone</button>
+          <button onClick={() => setActiveTab('security')} style={{ ...s.navItem, ...(activeTab === 'security' ? s.activeNavItem : {}) }}><ShieldCheck size={18} /> Routing Security</button>
+          <button onClick={() => setActiveTab('protocols')} style={{ ...s.navItem, ...(activeTab === 'protocols' ? s.activeNavItem : {}) }}><Cpu size={18} /> Protocol Stack</button>
+          <button onClick={() => setActiveTab('quiz')} style={{ ...s.navItem, ...(activeTab === 'quiz' ? s.activeNavItem : {}) }}><Activity size={18} /> Final Evaluation</button>
+        </nav>
+
+        <div style={{ marginTop: '20px', height: '1px', background: theme.border }} />
+        
+        <button onClick={() => setShowGlossary(true)} style={{ ...s.navItem, marginTop: '10px' }}><BookMarked size={18} /> Open Glossary</button>
+
+        <div style={{ marginTop: 'auto', padding: '15px', background: '#0d1117', borderRadius: '12px', border: `1px solid ${theme.border}` }}>
+          <div style={{ fontSize: '10px', fontWeight: 800, color: theme.dim, marginBottom: '8px' }}>COURSE COMPLETION</div>
+          <div style={{ height: '4px', background: theme.border, borderRadius: '10px' }}>
+             <motion.div animate={{ width: isFinished ? '100%' : '40%' }} style={{ height: '100%', background: theme.accent }} />
           </div>
-          <h1 style={{ fontSize: '2.8rem', fontWeight: '800', marginTop: '15px', color: '#0f172a' }}>Building the Digital Foundation</h1>
-          <p className="subtitle" style={{ color: '#64748b', fontSize: '1.1rem' }}>How the Internet Society (ISOC) protects the physical and logical web.</p>
-        </header>
+        </div>
+      </aside>
 
-        {/* Introduction */}
-        <section className="introduction" style={{ marginBottom: '50px' }}>
-          <p style={{ fontSize: '1.15rem', lineHeight: '1.8', color: '#334155' }}>
-            The internet isn't just "the cloud." It is a massive, physical achievement of engineering. 
-            The <strong>Internet Society (ISOC)</strong>, founded in 1992, acts as the guardian of this system, 
-            ensuring it remains open, globally connected, and secure.
-          </p>
-        </section>
+      <main style={s.main}>
+        {renderContent()}
+      </main>
 
-        {/* 1. Infrastructure Grid */}
-        <motion.section {...fadeInUp} className="content-card">
-          <SectionTitle title="The Physical Backbone" />
-          <p style={{ marginBottom: '20px' }}>Without these four physical components, global communication would cease to exist:</p>
-          <div className="concept-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h4 style={{ color: 'var(--accent)' }}>Data Centers</h4>
-              <p style={{ fontSize: '0.9rem' }}>The "brains" where your data lives. Massive server farms requiring 24/7 cooling and power.</p>
+      <AnimatePresence>
+        {showGlossary && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+            <div style={{ background: theme.card, padding: '40px', borderRadius: '24px', width: '400px', border: `1px solid ${theme.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <h3 style={{ color: 'white' }}>Glossary</h3>
+                <X onClick={() => setShowGlossary(false)} style={{ cursor: 'pointer' }} />
+              </div>
+              {GLOSSARY.map((g, i) => (
+                <div key={i} style={{ marginBottom: '20px' }}>
+                  <div style={{ color: theme.accent, fontWeight: 700 }}>{g.term}</div>
+                  <div style={{ fontSize: '13px', color: theme.dim }}>{g.def}</div>
+                </div>
+              ))}
             </div>
-            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h4 style={{ color: 'var(--accent)' }}>Subsea Cables</h4>
-              <p style={{ fontSize: '0.9rem' }}>Fiber optics on the ocean floor that connect continents at the speed of light.</p>
-            </div>
-            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h4 style={{ color: 'var(--accent)' }}>IXPs</h4>
-              <p style={{ fontSize: '0.9rem' }}>Internet Exchange Points. The physical locations where different ISPs meet to swap traffic.</p>
-            </div>
-            <div className="concept-box" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <h4 style={{ color: 'var(--accent)' }}>Routers/BGP</h4>
-              <p style={{ fontSize: '0.9rem' }}>The traffic controllers that decide the most efficient path for your data packets.</p>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* 2. Research Expansion: MANRS */}
-        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
-          <SectionTitle title="Security: The MANRS Initiative" />
-          <div className="info-card" style={{ display: 'flex', gap: '20px', alignItems: 'center', background: '#eff6ff', border: '1px solid #dbeafe' }}>
-            <div style={{ fontSize: '2rem' }}>🛡️</div>
-            <div>
-              <p style={{ margin: 0 }}><strong>Research Expansion:</strong> ISOC leads the <strong>MANRS</strong> (Mutually Agreed Norms for Routing Security) project. It prevents "Route Hijacking," where malicious actors misdirect internet traffic to steal data or cause outages.</p>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* 3. Protocols: The Universal Language */}
-        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
-          <SectionTitle title="The Language of Connection" />
-          <p>For the internet to be universal, every device must speak the same "language."</p>
-          <ul className="step-list" style={{ listStyle: 'none', padding: 0 }}>
-            <li className="info-card" style={{ marginBottom: '10px' }}>
-              <strong>TCP/IP:</strong> The core suite. TCP ensures data arrives in order; IP ensures it finds the right house.
-            </li>
-            <li className="info-card" style={{ marginBottom: '10px' }}>
-              <strong>HTTPS:</strong> The secure version of the web. It uses <strong>TLS encryption</strong> to hide your traffic from hackers.
-            </li>
-            <li className="info-card">
-              <strong>DNS (The Web's GPS):</strong> Managed by <strong>ICANN</strong>, this turns "google.com" into a machine-readable IP address.
-            </li>
-          </ul>
-        </motion.section>
-
-        {/* 4. Advocacy & Future */}
-        <motion.section {...fadeInUp} className="content-card" style={{ marginTop: '50px' }}>
-          <SectionTitle title="Global Digital Inclusion" />
-          <p>The Internet Society doesn't just build hardware; they build communities. Their advocacy focuses on:</p>
-          <div className="info-grid">
-            <div className="info-card" style={{ borderTop: '4px solid var(--accent)' }}>
-              <h4>Community Networks</h4>
-              <p>Helping remote villages build their own internet infrastructure using low-cost Wi-Fi and satellite.</p>
-            </div>
-            <div className="info-card" style={{ borderTop: '4px solid var(--accent)' }}>
-              <h4>Open Standards</h4>
-              <p>Ensuring that no single company (like Google or Apple) can "own" the basic protocols of the web.</p>
-            </div>
-          </div>
-        </motion.section>
-
-        {/* Conclusion & Navigation */}
-        <motion.section {...fadeInUp} className="call-to-action" style={{ textAlign: 'center', marginTop: '60px', padding: '50px', background: '#1e293b', color: 'white', borderRadius: '16px' }}>
-          <h2 style={{ color: 'var(--accent)', marginBottom: '10px' }}>You've Completed the Infrastructure Module</h2>
-          <p style={{ marginBottom: '30px', opacity: 0.9 }}>The internet is a collaborative masterpiece. Now you know the physical and logical layers that keep us connected.</p>
-          
-          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-            <button 
-              className="nav-btn" 
-              style={{ background: 'var(--accent)', border: 'none', color: '#1e293b', fontWeight: '700' }}
-              onClick={() => navigate('/dashboard')}
-            >
-              Finish Lesson & Update Progress
-            </button>
-            <button 
-              className="nav-btn" 
-              style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'white' }}
-              onClick={() => window.location.href='/support'}
-            >
-              Support ISOC
-            </button>
-          </div>
-        </motion.section>
-
-        <footer style={{ marginTop: '40px', textAlign: 'center', opacity: 0.4, fontSize: '0.75rem', letterSpacing: '0.5px' }}>
-          BRAVE WAVE ACADEMY | DATA INFRASTRUCTURE RESEARCH v2.4
-        </footer>
-      </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
